@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Garhani Admin Panel</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        :root {
+            --primary: #2d5016; --secondary: #6b8e23; --accent: #d4a574;
+            --danger: #dc3545; --success: #28a745; --light: #f5f3f0;
+            --warn: #e67e22;
+        }
+        body { font-family:'Segoe UI',sans-serif; background:#f0ece6; color:#333; }
+
+        /* RIPPLE */
+        .ripple-host { position:relative; overflow:hidden; }
+        .ripple {
+            position:absolute; border-radius:50%; background:rgba(255,255,255,0.42);
+            transform:scale(0); animation:ripple-anim 0.55s linear; pointer-events:none;
+        }
+        @keyframes ripple-anim { to { transform:scale(4); opacity:0; } }
+
+        /* LOGIN */
+        .login-container {
+            display:flex; justify-content:center; align-items:center;
+            min-height:100vh;
+            background:linear-gradient(135deg, var(--primary), var(--secondary));
+        }
+        .login-box {
+            background:white; padding:3rem 2rem; border-radius:15px;
+            box-shadow:0 10px 40px rgba(0,0,0,0.2); width:90%; max-width:380px; text-align:center;
+        }
+        .login-icon { font-size:3.5rem; margin-bottom:1rem; }
+        .login-box h2 { color:var(--primary); margin-bottom:0.3rem; }
+        .login-box p  { color:#888; font-size:0.9rem; margin-bottom:1.5rem; }
+        .login-box input {
+            width:100%; padding:0.85rem 1rem; border:2px solid #ddd; border-radius:8px;
+            font-size:1rem; margin-bottom:1rem; outline:none; transition:border 0.3s;
+        }
+        .login-box input:focus { border-color:var(--primary); }
+        .login-btn {
+            width:100%; padding:0.85rem; background:linear-gradient(135deg,var(--primary),var(--secondary));
+            color:white; border:none; border-radius:8px; font-size:1rem;
+            font-weight:600; cursor:pointer; transition:all 0.3s;
+        }
+        .login-btn:hover { opacity:0.9; transform:translateY(-2px); }
+        #loginError { color:var(--danger); font-size:0.9rem; margin-top:0.8rem; display:none; }
+
+        /* ADMIN */
+        .admin-section { display:none; }
+        .admin-header {
+            background:linear-gradient(135deg,var(--primary),var(--secondary));
+            color:white; padding:1.2rem 2rem;
+            display:flex; justify-content:space-between; align-items:center;
+            flex-wrap:wrap; gap:0.5rem; position:sticky; top:0; z-index:100;
+            box-shadow:0 4px 15px rgba(45,80,22,0.4);
+        }
+        .admin-header h1 { font-size:1.3rem; }
+        .admin-header p  { font-size:0.8rem; opacity:0.85; }
+        .logout-btn {
+            background:rgba(255,255,255,0.15); color:white;
+            border:1px solid rgba(255,255,255,0.4);
+            padding:0.5rem 1.2rem; border-radius:20px;
+            cursor:pointer; font-size:0.9rem; transition:all 0.3s;
+        }
+        .logout-btn:hover { background:rgba(255,255,255,0.3); }
+
+        /* CONTAINER */
+        .container { max-width:1100px; margin:0 auto; padding:2rem 1rem; }
+
+        /* STATS */
+        .stats-box { display:grid; grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); gap:1rem; margin-bottom:2rem; }
+        .stat-card {
+            background:white; padding:1.2rem 1rem; border-radius:12px; text-align:center;
+            box-shadow:0 4px 15px rgba(45,80,22,0.1);
+        }
+        .stat-number { font-size:2rem; font-weight:700; color:var(--primary); }
+        .stat-label { font-size:0.78rem; color:#888; margin-top:0.2rem; }
+
+        /* TABS */
+        .tabs { display:flex; flex-wrap:wrap; gap:0.5rem; margin-bottom:1.5rem; }
+        .tab-btn {
+            background:white; color:var(--primary); border:2px solid var(--primary);
+            padding:0.5rem 1.1rem; border-radius:25px; cursor:pointer;
+            font-weight:600; font-size:0.88rem; transition:all 0.3s;
+        }
+        .tab-btn.active, .tab-btn:hover { background:var(--primary); color:white; }
+        .tab-content { display:none; }
+        .tab-content.active { display:block; }
+
+        /* CARD */
+        .card {
+            background:white; border-radius:12px; padding:1.5rem;
+            box-shadow:0 4px 20px rgba(45,80,22,0.08); margin-bottom:1.5rem;
+        }
+        .card-title { font-size:1.05rem; font-weight:700; color:var(--primary); margin-bottom:1.2rem; }
+
+        /* UPLOAD AREA */
+        .upload-area {
+            border:2px dashed #c8d8b0; border-radius:12px; padding:2rem;
+            text-align:center; cursor:pointer; transition:all 0.3s; background:#fafdf6;
+        }
+        .upload-area:hover, .upload-area.drag-over { border-color:var(--primary); background:#f0f7e8; }
+        .upload-icon { font-size:2.5rem; margin-bottom:0.5rem; }
+        .upload-text { color:#777; font-size:0.92rem; margin-bottom:0.8rem; }
+        .upload-input { display:none; }
+
+        /* BUTTONS */
+        .btn {
+            display:inline-flex; align-items:center; gap:0.4rem;
+            padding:0.6rem 1.3rem; border-radius:25px; border:none;
+            cursor:pointer; font-weight:600; font-size:0.9rem; transition:all 0.3s;
+        }
+        .btn-primary { background:linear-gradient(135deg,var(--primary),var(--secondary)); color:white; }
+        .btn-primary:hover { transform:translateY(-2px); box-shadow:0 5px 15px rgba(45,80,22,0.3); }
+        .btn-danger  { background:var(--danger); color:white; }
+        .btn-danger:hover { opacity:0.85; }
+        .btn-warn    { background:var(--warn); color:white; }
+        .btn-sm { padding:0.35rem 0.8rem; font-size:0.8rem; border-radius:15px; }
+
+        /* STATUS */
+        .status-msg { font-size:0.88rem; margin-top:0.7rem; padding:0.5rem 0.8rem; border-radius:6px; }
+        .status-msg.info    { background:#e8f4fd; color:#1565c0; }
+        .status-msg.success { background:#e8f5e9; color:#2e7d32; }
+        .status-msg.error   { background:#fdecea; color:#c62828; }
+
+        /* GALLERY GRID */
+        .gallery-grid {
+            display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr));
+            gap:1rem; margin-top:1rem;
+        }
+        .gallery-card {
+            position:relative; border-radius:10px; overflow:hidden;
+            aspect-ratio:1; background:#e8e4df;
+            box-shadow:0 3px 10px rgba(0,0,0,0.1); transition:all 0.3s;
+        }
+        .gallery-card:hover { transform:translateY(-4px); box-shadow:0 8px 20px rgba(0,0,0,0.15); }
+        .gallery-card img, .gallery-card video { width:100%; height:100%; object-fit:cover; }
+        .gallery-card-overlay {
+            position:absolute; top:0; left:0; right:0; bottom:0;
+            background:rgba(0,0,0,0.55); display:flex;
+            align-items:center; justify-content:center; gap:0.5rem;
+            opacity:0; transition:opacity 0.3s;
+        }
+        .gallery-card:hover .gallery-card-overlay { opacity:1; }
+        .icon-btn {
+            width:36px; height:36px; border-radius:50%; border:none;
+            cursor:pointer; display:flex; align-items:center; justify-content:center;
+            font-size:0.9rem; transition:all 0.3s;
+        }
+        .view-btn   { background:rgba(255,255,255,0.9); color:#333; }
+        .delete-btn { background:var(--danger); color:white; }
+
+        /* FORM INPUTS */
+        .form-group { margin-bottom:1rem; }
+        .form-group label { font-size:0.85rem; color:#555; font-weight:600; display:block; margin-bottom:0.4rem; }
+        .form-group input, .form-group textarea, .form-group select {
+            width:100%; padding:0.65rem 0.9rem;
+            border:2px solid #ddd; border-radius:8px; font-size:0.93rem;
+            font-family:inherit; outline:none; transition:border 0.3s; resize:vertical;
+        }
+        .form-group input:focus, .form-group textarea:focus { border-color:var(--primary); }
+        .form-row { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
+        @media(max-width:600px) { .form-row { grid-template-columns:1fr; } }
+
+        /* NOTICE CARD EDITOR */
+        .notice-card-editor {
+            background:#f9f7f4; border-radius:8px; padding:1rem;
+            border:1px solid #e0d8ce; margin-bottom:0.8rem; position:relative;
+        }
+        .notice-card-editor .remove-card {
+            position:absolute; top:0.5rem; right:0.5rem;
+            background:var(--danger); color:white; border:none;
+            width:24px; height:24px; border-radius:50%; cursor:pointer;
+            font-size:0.85rem; display:flex; align-items:center; justify-content:center;
+        }
+
+        /* ANNOUNCEMENT CARDS */
+        .ann-row {
+            display:flex; align-items:flex-start; justify-content:space-between;
+            gap:1rem; padding:1rem; background:#f9f7f4; border-radius:8px;
+            margin-bottom:0.8rem; border-left:4px solid var(--accent);
+        }
+        .ann-row-info { flex:1; }
+        .ann-row-info .ann-title { font-weight:700; color:var(--primary); }
+        .ann-row-info .ann-date  { font-size:0.8rem; color:#999; }
+        .ann-row-info .ann-body  { color:#555; font-size:0.9rem; margin-top:0.2rem; }
+        .ann-row-actions { display:flex; gap:0.4rem; align-items:center; }
+
+        /* LIGHTBOX */
+        .lightbox {
+            display:none; position:fixed; top:0; left:0; width:100%; height:100%;
+            background:rgba(0,0,0,0.9); z-index:9000;
+            align-items:center; justify-content:center;
+        }
+        .lightbox.active { display:flex; }
+        .lightbox img, .lightbox video { max-width:90vw; max-height:90vh; border-radius:8px; }
+        .lightbox-close {
+            position:fixed; top:1rem; right:1rem;
+            background:white; border:none; font-size:1.5rem;
+            width:42px; height:42px; border-radius:50%; cursor:pointer;
+        }
+
+        /* DB STATUS */
+        .db-status { padding:0.8rem 1rem; border-radius:8px; background:#f0f0f0; font-size:0.9rem; }
+        .db-status.ok  { background:#e8f5e9; color:#2e7d32; }
+        .db-status.err { background:#fdecea; color:#c62828; }
+
+        /* LOADING */
+        .loading { text-align:center; padding:2rem; color:var(--primary); }
+        .loading-spinner {
+            display:inline-block; width:22px; height:22px;
+            border:3px solid rgba(45,80,22,0.2); border-top-color:var(--primary);
+            border-radius:50%; animation:spin 0.8s linear infinite; margin-right:8px; vertical-align:middle;
+        }
+        @keyframes spin { to { transform:rotate(360deg); } }
+
+        .upload-progress {
+            background:#e0e0e0; border-radius:20px; height:8px; margin-top:0.5rem; overflow:hidden;
+        }
+        .upload-progress-bar {
+            height:100%; background:linear-gradient(90deg,var(--primary),var(--secondary));
+            border-radius:20px; transition:width 0.4s;
+        }
+
+        @media(max-width:640px) { .admin-header h1 { font-size:1.1rem; } }
+    </style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-container" id="loginSection">
+    <div class="login-box">
+        <div class="login-icon">🌾</div>
+        <h2>Garhani Admin</h2>
+        <p>Enter password to manage the website</p>
+        <input type="password" id="passwordInput" placeholder="Admin password..." onkeydown="if(event.key==='Enter') handleLogin()">
+        <button class="login-btn ripple-host" onclick="handleLogin()">
+            <i class="fas fa-sign-in-alt"></i> Login
+        </button>
+        <div id="loginError"></div>
+    </div>
+</div>
+
+<!-- ADMIN PANEL -->
+<div id="adminSection" class="admin-section">
+
+    <div class="admin-header">
+        <div>
+            <h1>🌾 Garhani Admin Panel</h1>
+            <p>Full website control</p>
+        </div>
+        <button class="logout-btn ripple-host" onclick="handleLogout()">
+            <i class="fas fa-sign-out-alt"></i> Logout
+        </button>
+    </div>
+
+    <div class="container">
+
+        <!-- STATS -->
+        <div class="stats-box">
+            <div class="stat-card">
+                <div class="stat-number" id="photoCount">–</div>
+                <div class="stat-label">Photos</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="videoCount">–</div>
+                <div class="stat-label">Videos</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="annCount">–</div>
+                <div class="stat-label">Announcements</div>
+            </div>
+        </div>
+
+        <!-- TABS -->
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('tabPhotos',this)"><i class="fas fa-images"></i> Photos</button>
+            <button class="tab-btn" onclick="switchTab('tabVideos',this)"><i class="fas fa-video"></i> Videos</button>
+            <button class="tab-btn" onclick="switchTab('tabAnnouncements',this)"><i class="fas fa-bullhorn"></i> Announcements</button>
+            <button class="tab-btn" onclick="switchTab('tabContent',this)"><i class="fas fa-edit"></i> Site Content</button>
+            <button class="tab-btn" onclick="switchTab('tabSettings',this)"><i class="fas fa-cog"></i> Settings</button>
+        </div>
+
+        <!-- ===== PHOTOS TAB ===== -->
+        <div id="tabPhotos" class="tab-content active">
+            <div class="card">
+                <div class="card-title">📸 Upload Photos (ImgBB — Free Hosting)</div>
+                <div class="upload-area" id="photoUploadArea"
+                     ondrop="handlePhotoDrop(event)"
+                     ondragover="handleDragOver(event,'photoUploadArea')"
+                     ondragleave="handleDragLeave(event,'photoUploadArea')"
+                     onclick="document.getElementById('photoInput').click()">
+                    <div class="upload-icon">📷</div>
+                    <p class="upload-text">Drag photos here or click to select<br><small style="color:#aaa">JPG/PNG/WEBP — Multiple select supported</small></p>
+                    <input type="file" id="photoInput" class="upload-input" accept="image/*" multiple onchange="handlePhotoSelect(event)">
+                    <button class="btn btn-primary ripple-host" onclick="event.stopPropagation();document.getElementById('photoInput').click()">
+                        <i class="fas fa-folder-open"></i> Choose Photos
+                    </button>
+                </div>
+                <div id="photoStatus"></div>
+                <div class="upload-progress" id="photoProgress" style="display:none"><div class="upload-progress-bar" id="photoProgressBar" style="width:0%"></div></div>
+            </div>
+            <div class="card">
+                <div class="card-title">📸 All Photos</div>
+                <div class="gallery-grid" id="photosGrid">
+                    <div class="loading"><span class="loading-spinner"></span> Loading...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== VIDEOS TAB ===== -->
+        <div id="tabVideos" class="tab-content">
+            <div class="card">
+                <div class="card-title">🎬 Upload Videos (URL only — paste a direct video link)</div>
+                <div class="form-group">
+                    <label>Video URL (YouTube embed / direct MP4 link)</label>
+                    <input type="url" id="videoUrlInput" placeholder="https://...">
+                </div>
+                <div class="form-group">
+                    <label>Video Title</label>
+                    <input type="text" id="videoTitleInput" placeholder="e.g. Village Festival 2025">
+                </div>
+                <button class="btn btn-primary ripple-host" onclick="addVideoByUrl()">
+                    <i class="fas fa-plus"></i> Add Video
+                </button>
+                <div id="videoStatus"></div>
+            </div>
+            <div class="card">
+                <div class="card-title">🎬 All Videos</div>
+                <div class="gallery-grid" id="videosGrid">
+                    <div class="loading"><span class="loading-spinner"></span> Loading...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== ANNOUNCEMENTS TAB ===== -->
+        <div id="tabAnnouncements" class="tab-content">
+            <div class="card">
+                <div class="card-title">📢 Add Announcement</div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Title *</label>
+                        <input type="text" id="annTitle" placeholder="e.g. Village Meeting">
+                    </div>
+                    <div class="form-group">
+                        <label>Date</label>
+                        <input type="date" id="annDate">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Details *</label>
+                    <textarea id="annBody" rows="3" placeholder="Announcement details..."></textarea>
+                </div>
+                <button class="btn btn-primary ripple-host" onclick="addAnnouncement()">
+                    <i class="fas fa-plus"></i> Post Announcement
+                </button>
+                <div id="annStatus"></div>
+            </div>
+            <div class="card">
+                <div class="card-title">📢 All Announcements</div>
+                <div id="annList"><div class="loading"><span class="loading-spinner"></span> Loading...</div></div>
+            </div>
+        </div>
+
+        <!-- ===== SITE CONTENT TAB ===== -->
+        <div id="tabContent" class="tab-content">
+
+            <div class="card">
+                <div class="card-title">📰 Ticker / Marquee Text</div>
+                <div class="form-group">
+                    <label>Top Ticker Text</label>
+                    <input type="text" id="cTickerTop" placeholder="🌾 Welcome to Garhani Village • Bhojpur Pride • ...">
+                </div>
+                <div class="form-group">
+                    <label>Bottom Ticker Text</label>
+                    <input type="text" id="cTickerBottom" placeholder="👨‍💻 Managed by Aayush Yadav • ...">
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">🏷️ Header Section</div>
+                <div class="form-group">
+                    <label>Site Title (e.g. 🌾 Garhani)</label>
+                    <input type="text" id="cSiteTitle" placeholder="🌾 Garhani">
+                </div>
+                <div class="form-group">
+                    <label>Subtitle</label>
+                    <input type="text" id="cSiteSubtitle" placeholder="Pride of Bihar • भोजपुर का गर्व">
+                </div>
+                <div class="form-group">
+                    <label>Location Line</label>
+                    <input type="text" id="cSiteLocation" placeholder="Bhojpur District, Bihar, India">
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">🏡 Hero Section</div>
+                <div class="form-group">
+                    <label>Hero Heading</label>
+                    <input type="text" id="cHeroTitle" placeholder="🏡 Welcome to Garhani Village">
+                </div>
+                <div class="form-group">
+                    <label>Hero Description</label>
+                    <textarea id="cHeroText" rows="4" placeholder="Village description..."></textarea>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">📋 About Cards (Notice Board)</div>
+                <div id="noticeCardsEditor"></div>
+                <button class="btn btn-primary ripple-host" onclick="addNoticeCard()" style="margin-top:0.5rem;">
+                    <i class="fas fa-plus"></i> Add Card
+                </button>
+            </div>
+
+            <div class="card">
+                <div class="card-title">🔗 Footer Links</div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Facebook URL</label>
+                        <input type="url" id="cFooterFb" placeholder="https://facebook.com/...">
+                    </div>
+                    <div class="form-group">
+                        <label>Instagram URL</label>
+                        <input type="url" id="cFooterIg" placeholder="https://instagram.com/...">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>YouTube URL</label>
+                    <input type="url" id="cFooterYt" placeholder="https://youtube.com/...">
+                </div>
+                <div class="form-group">
+                    <label>Footer Copyright Text</label>
+                    <input type="text" id="cFooterCopy" placeholder="© 2025 Garhani Village Showcase — Bhojpur, Bihar">
+                </div>
+            </div>
+
+            <button class="btn btn-primary ripple-host" onclick="saveSiteContent()" style="width:100%; justify-content:center; padding:0.9rem;">
+                <i class="fas fa-save"></i> Save All Site Content
+            </button>
+            <div id="contentStatus" style="margin-top:0.7rem;"></div>
+        </div>
+
+        <!-- ===== SETTINGS TAB ===== -->
+        <div id="tabSettings" class="tab-content">
+            <div class="card">
+                <div class="card-title">📡 Database Status</div>
+                <div id="dbStatus" class="db-status">Checking connection...</div>
+            </div>
+            <div class="card">
+                <div class="card-title">💾 Backup</div>
+                <button class="btn btn-primary ripple-host" onclick="backupData()" style="width:100%; justify-content:center;">
+                    <i class="fas fa-download"></i> Download JSON Backup
+                </button>
+                <div id="backupStatus" style="margin-top:0.7rem;"></div>
+            </div>
+            <div class="card">
+                <div class="card-title">🗑️ Danger Zone</div>
+                <p style="color:#999; font-size:0.85rem; margin-bottom:1rem;">⚠️ These actions cannot be undone.</p>
+                <div style="display:flex; flex-wrap:wrap; gap:0.8rem;">
+                    <button class="btn btn-danger ripple-host" onclick="deleteAllPhotos()">
+                        <i class="fas fa-trash"></i> Delete All Photos
+                    </button>
+                    <button class="btn btn-danger ripple-host" onclick="deleteAllVideos()">
+                        <i class="fas fa-trash"></i> Delete All Videos
+                    </button>
+                    <button class="btn btn-danger ripple-host" onclick="deleteAllAnnouncements()">
+                        <i class="fas fa-trash"></i> Delete All Announcements
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </div><!-- /container -->
+</div><!-- /adminSection -->
+
+<!-- LIGHTBOX -->
+<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+    <button class="lightbox-close" onclick="closeLightbox()">✕</button>
+    <img id="lightboxImg" style="display:none">
+    <video id="lightboxVid" controls style="display:none"></video>
+</div>
+
+<script>
+    // ============================================================
+    //  CONFIG
+    // ============================================================
+    const DB_URL       = "https://garhani-b65bd-default-rtdb.firebaseio.com";
+    const ADMIN_PASS   = "Aayu8090";
+    // ImgBB free API key — go to https://imgbb.com/signup then API → get key
+    // Replace with YOUR key:
+    const IMGBB_KEY    = "YOUR_IMGBB_API_KEY";
+    // ============================================================
+
+    // ===== FIREBASE REST =====
+    async function fbGet(path) {
+        const r = await fetch(`${DB_URL}/${path}.json`);
+        if (!r.ok) throw new Error('GET ' + r.status);
+        return r.json();
+    }
+    async function fbPut(path, data) {
+        const r = await fetch(`${DB_URL}/${path}.json`, {
+            method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)
+        });
+        if (!r.ok) throw new Error('PUT ' + r.status);
+        return r.json();
+    }
+    async function fbPost(path, data) {
+        const r = await fetch(`${DB_URL}/${path}.json`, {
+            method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)
+        });
+        if (!r.ok) throw new Error('POST ' + r.status);
+        return r.json();
+    }
+    async function fbDelete(path) {
+        const r = await fetch(`${DB_URL}/${path}.json`, { method:'DELETE' });
+        if (!r.ok) throw new Error('DELETE ' + r.status);
+    }
+
+    // ===== RIPPLE =====
+    document.addEventListener('click', function(e) {
+        const h = e.target.closest('.ripple-host');
+        if (!h) return;
+        const rect = h.getBoundingClientRect();
+        const size = Math.max(rect.width, rect.height) * 2;
+        const r = document.createElement('span');
+        r.className = 'ripple';
+        r.style.cssText = `width:${size}px;height:${size}px;left:${e.clientX-rect.left-size/2}px;top:${e.clientY-rect.top-size/2}px;`;
+        h.appendChild(r);
+        r.addEventListener('animationend', () => r.remove());
+    });
+
+    // ===== LOGIN =====
+    function handleLogin() {
+        const pwd = document.getElementById('passwordInput').value.trim();
+        if (!pwd) { showLoginErr('Please enter password.'); return; }
+        if (pwd === ADMIN_PASS) {
+            document.getElementById('loginSection').style.display = 'none';
+            document.getElementById('adminSection').style.display = 'block';
+            initAdmin();
+        } else {
+            showLoginErr('❌ Wrong password.');
+            document.getElementById('passwordInput').value = '';
+        }
+    }
+    function showLoginErr(msg) {
+        const el = document.getElementById('loginError');
+        el.textContent = msg; el.style.display = 'block';
+    }
+    function handleLogout() {
+        if (!confirm('Logout?')) return;
+        document.getElementById('loginSection').style.display = 'flex';
+        document.getElementById('adminSection').style.display = 'none';
+        document.getElementById('passwordInput').value = '';
+    }
+
+    // ===== INIT =====
+    function initAdmin() {
+        loadPhotos();
+        loadVideos();
+        loadAnnouncements();
+        loadSiteContent();
+        checkDbStatus();
+    }
+
+    // ===== TABS =====
+    function switchTab(id, btn) {
+        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        btn.classList.add('active');
+    }
+
+    // ===== STATUS HELPERS =====
+    function showStatus(id, msg, type) {
+        const el = document.getElementById(id);
+        el.textContent = msg; el.className = 'status-msg ' + type; el.style.display = 'block';
+        if (type === 'success') setTimeout(() => { el.style.display='none'; }, 3000);
+    }
+
+    // ===== DRAG DROP =====
+    function handleDragOver(e, id) { e.preventDefault(); document.getElementById(id).classList.add('drag-over'); }
+    function handleDragLeave(e, id) { document.getElementById(id).classList.remove('drag-over'); }
+    function handlePhotoDrop(e) {
+        e.preventDefault();
+        document.getElementById('photoUploadArea').classList.remove('drag-over');
+        uploadPhotos(Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/')));
+    }
+    function handlePhotoSelect(e) { uploadPhotos(Array.from(e.target.files)); }
+
+    // ===== IMGBB UPLOAD =====
+    async function uploadToImgBB(file) {
+        const form = new FormData();
+        const b64  = await toBase64(file);
+        form.append('image', b64.split(',')[1]);
+        const res  = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_KEY}`, { method:'POST', body:form });
+        const json = await res.json();
+        if (!json.success) throw new Error('ImgBB upload failed: ' + (json.error?.message || 'unknown'));
+        return json.data.url;
+    }
+
+    function toBase64(file) {
+        return new Promise((res, rej) => {
+            const r = new FileReader();
+            r.onload = e => res(e.target.result);
+            r.onerror = rej;
+            r.readAsDataURL(file);
+        });
+    }
+
+    async function uploadPhotos(files) {
+        if (!files.length) return;
+        const progressWrap = document.getElementById('photoProgress');
+        const progressBar  = document.getElementById('photoProgressBar');
+        progressWrap.style.display = 'block';
+        showStatus('photoStatus', `Uploading 0/${files.length}...`, 'info');
+        let done = 0;
+        for (const file of files) {
+            try {
+                showStatus('photoStatus', `Uploading ${done+1}/${files.length}: ${file.name}`, 'info');
+                let url;
+                if (IMGBB_KEY === 'YOUR_IMGBB_API_KEY') {
+                    // Fallback: store small base64 directly (only if no ImgBB key)
+                    url = await toBase64(file);
+                } else {
+                    url = await uploadToImgBB(file);
+                }
+                await fbPost('gallery/photos', { url, name:file.name, uploadedAt:new Date().toISOString() });
+                done++;
+                progressBar.style.width = `${Math.round(done/files.length*100)}%`;
+                showStatus('photoStatus', `✅ ${done}/${files.length} uploaded`, done===files.length?'success':'info');
+            } catch(err) {
+                showStatus('photoStatus', `❌ ${err.message}`, 'error');
+                break;
+            }
+        }
+        document.getElementById('photoInput').value = '';
+        progressWrap.style.display = 'none';
+        progressBar.style.width = '0%';
+        if (done > 0) loadPhotos();
+    }
+
+    // ===== LOAD PHOTOS =====
+    async function loadPhotos() {
+        const grid = document.getElementById('photosGrid');
+        grid.innerHTML = '<div class="loading"><span class="loading-spinner"></span> Loading...</div>';
+        try {
+            const data = await fbGet('gallery/photos');
+            grid.innerHTML = '';
+            let count = 0;
+            if (data) {
+                Object.entries(data).forEach(([key, photo]) => {
+                    count++;
+                    const card = document.createElement('div');
+                    card.className = 'gallery-card';
+                    card.innerHTML = `
+                        <img src="${photo.url}" alt="${photo.name||'photo'}" loading="lazy">
+                        <div class="gallery-card-overlay">
+                            <button class="icon-btn view-btn" onclick="event.stopPropagation();viewMedia('${photo.url}','img')" title="View"><i class="fas fa-eye"></i></button>
+                            <button class="icon-btn delete-btn" onclick="event.stopPropagation();deletePhoto('${key}')" title="Delete"><i class="fas fa-trash"></i></button>
+                        </div>`;
+                    grid.appendChild(card);
+                });
+            }
+            if (!count) grid.innerHTML = '<div class="loading">No photos yet.</div>';
+            document.getElementById('photoCount').textContent = count;
+        } catch(e) {
+            grid.innerHTML = `<div class="loading" style="color:var(--danger)">❌ ${e.message}</div>`;
+        }
+    }
+
+    async function deletePhoto(key) {
+        if (!confirm('Delete this photo?')) return;
+        try { await fbDelete('gallery/photos/' + key); loadPhotos(); }
+        catch(e) { alert('Error: ' + e.message); }
+    }
+
+    // ===== VIDEO URL =====
+    async function addVideoByUrl() {
+        const url   = document.getElementById('videoUrlInput').value.trim();
+        const title = document.getElementById('videoTitleInput').value.trim();
+        if (!url) { showStatus('videoStatus','Enter a video URL.','error'); return; }
+        try {
+            await fbPost('gallery/videos', { url, name:title||'Video', uploadedAt:new Date().toISOString() });
+            document.getElementById('videoUrlInput').value = '';
+            document.getElementById('videoTitleInput').value = '';
+            showStatus('videoStatus','✅ Video added!','success');
+            loadVideos();
+        } catch(e) { showStatus('videoStatus','❌ '+e.message,'error'); }
+    }
+
+    async function loadVideos() {
+        const grid = document.getElementById('videosGrid');
+        grid.innerHTML = '<div class="loading"><span class="loading-spinner"></span> Loading...</div>';
+        try {
+            const data = await fbGet('gallery/videos');
+            grid.innerHTML = '';
+            let count = 0;
+            if (data) {
+                Object.entries(data).forEach(([key, video]) => {
+                    count++;
+                    const card = document.createElement('div');
+                    card.className = 'gallery-card';
+                    card.innerHTML = `
+                        <div style="display:flex;align-items:center;justify-content:center;height:100%;background:#1a1a1a;color:white;font-size:2rem;flex-direction:column;gap:0.3rem;">
+                            🎬<div style="font-size:0.7rem;padding:0 0.5rem;text-align:center;opacity:0.8;">${video.name||'Video'}</div>
+                        </div>
+                        <div class="gallery-card-overlay">
+                            <button class="icon-btn view-btn" onclick="event.stopPropagation();viewMedia('${video.url}','vid')" title="View"><i class="fas fa-play"></i></button>
+                            <button class="icon-btn delete-btn" onclick="event.stopPropagation();deleteVideo('${key}')" title="Delete"><i class="fas fa-trash"></i></button>
+                        </div>`;
+                    grid.appendChild(card);
+                });
+            }
+            if (!count) grid.innerHTML = '<div class="loading">No videos yet.</div>';
+            document.getElementById('videoCount').textContent = count;
+        } catch(e) {
+            grid.innerHTML = `<div class="loading" style="color:var(--danger)">❌ ${e.message}</div>`;
+        }
+    }
+
+    async function deleteVideo(key) {
+        if (!confirm('Delete this video?')) return;
+        try { await fbDelete('gallery/videos/' + key); loadVideos(); }
+        catch(e) { alert('Error: ' + e.message); }
+    }
+
+    // ===== ANNOUNCEMENTS =====
+    async function addAnnouncement() {
+        const title = document.getElementById('annTitle').value.trim();
+        const body  = document.getElementById('annBody').value.trim();
+        const date  = document.getElementById('annDate').value;
+        if (!title || !body) { showStatus('annStatus','Title and details required.','error'); return; }
+        try {
+            await fbPost('announcements', {
+                title, body,
+                date: date ? new Date(date).toLocaleDateString('en-IN',{day:'numeric',month:'long',year:'numeric'}) : new Date().toLocaleDateString('en-IN',{day:'numeric',month:'long',year:'numeric'}),
+                createdAt: new Date().toISOString()
+            });
+            document.getElementById('annTitle').value = '';
+            document.getElementById('annBody').value  = '';
+            document.getElementById('annDate').value  = '';
+            showStatus('annStatus','✅ Announcement posted!','success');
+            loadAnnouncements();
+        } catch(e) { showStatus('annStatus','❌ '+e.message,'error'); }
+    }
+
+    async function loadAnnouncements() {
+        const list = document.getElementById('annList');
+        list.innerHTML = '<div class="loading"><span class="loading-spinner"></span> Loading...</div>';
+        try {
+            const data = await fbGet('announcements');
+            list.innerHTML = '';
+            let count = 0;
+            if (data) {
+                Object.entries(data).reverse().forEach(([key, ann]) => {
+                    count++;
+                    const row = document.createElement('div');
+                    row.className = 'ann-row';
+                    row.innerHTML = `
+                        <div class="ann-row-info">
+                            <div class="ann-date">${ann.date||''}</div>
+                            <div class="ann-title">${ann.title||''}</div>
+                            <div class="ann-body">${ann.body||''}</div>
+                        </div>
+                        <div class="ann-row-actions">
+                            <button class="btn btn-danger btn-sm ripple-host" onclick="deleteAnnouncement('${key}')"><i class="fas fa-trash"></i></button>
+                        </div>`;
+                    list.appendChild(row);
+                });
+            }
+            if (!count) list.innerHTML = '<div class="loading">No announcements yet.</div>';
+            document.getElementById('annCount').textContent = count;
+        } catch(e) {
+            list.innerHTML = `<div class="loading" style="color:var(--danger)">❌ ${e.message}</div>`;
+        }
+    }
+
+    async function deleteAnnouncement(key) {
+        if (!confirm('Delete this announcement?')) return;
+        try { await fbDelete('announcements/' + key); loadAnnouncements(); }
+        catch(e) { alert('Error: ' + e.message); }
+    }
+
+    // ===== SITE CONTENT =====
+    let noticeCardCount = 0;
+
+    function addNoticeCard(title='', text='') {
+        noticeCardCount++;
+        const i = noticeCardCount;
+        const editor = document.getElementById('noticeCardsEditor');
+        const div = document.createElement('div');
+        div.className = 'notice-card-editor';
+        div.id = `nc_${i}`;
+        div.innerHTML = `
+            <button class="remove-card" onclick="document.getElementById('nc_${i}').remove()">✕</button>
+            <div class="form-group" style="margin-bottom:0.5rem;">
+                <label>Card Title</label>
+                <input type="text" id="nc_title_${i}" value="${title.replace(/"/g,'&quot;')}" placeholder="e.g. 📍 Village Name">
+            </div>
+            <div class="form-group" style="margin-bottom:0;">
+                <label>Card Text</label>
+                <textarea id="nc_text_${i}" rows="2" placeholder="Description...">${text}</textarea>
+            </div>`;
+        editor.appendChild(div);
+    }
+
+    async function loadSiteContent() {
+        try {
+            const c = await fbGet('siteContent');
+            if (!c) { addNoticeCard(); return; }
+            if (c.tickerText)      document.getElementById('cTickerTop').value     = c.tickerText;
+            if (c.bottomTicker)    document.getElementById('cTickerBottom').value  = c.bottomTicker;
+            if (c.siteTitle)       document.getElementById('cSiteTitle').value     = c.siteTitle;
+            if (c.siteSubtitle)    document.getElementById('cSiteSubtitle').value  = c.siteSubtitle;
+            if (c.siteLocation)    document.getElementById('cSiteLocation').value  = c.siteLocation;
+            if (c.heroTitle)       document.getElementById('cHeroTitle').value     = c.heroTitle;
+            if (c.heroText)        document.getElementById('cHeroText').value      = c.heroText;
+            if (c.footerFb)        document.getElementById('cFooterFb').value      = c.footerFb;
+            if (c.footerIg)        document.getElementById('cFooterIg').value      = c.footerIg;
+            if (c.footerYt)        document.getElementById('cFooterYt').value      = c.footerYt;
+            if (c.footerCopyright) document.getElementById('cFooterCopy').value    = c.footerCopyright;
+            document.getElementById('noticeCardsEditor').innerHTML = '';
+            noticeCardCount = 0;
+            if (c.noticeCards && c.noticeCards.length) {
+                c.noticeCards.forEach(card => addNoticeCard(card.title, card.text));
+            } else {
+                addNoticeCard();
+            }
+        } catch(e) {
+            addNoticeCard();
+        }
+    }
+
+    async function saveSiteContent() {
+        // Collect notice cards
+        const cards = [];
+        document.querySelectorAll('.notice-card-editor').forEach(div => {
+            const id = div.id.replace('nc_','');
+            const t = document.getElementById(`nc_title_${id}`)?.value.trim();
+            const x = document.getElementById(`nc_text_${id}`)?.value.trim();
+            if (t || x) cards.push({ title:t||'', text:x||'' });
+        });
+
+        const payload = {
+            tickerText:      document.getElementById('cTickerTop').value.trim(),
+            bottomTicker:    document.getElementById('cTickerBottom').value.trim(),
+            siteTitle:       document.getElementById('cSiteTitle').value.trim(),
+            siteSubtitle:    document.getElementById('cSiteSubtitle').value.trim(),
+            siteLocation:    document.getElementById('cSiteLocation').value.trim(),
+            heroTitle:       document.getElementById('cHeroTitle').value.trim(),
+            heroText:        document.getElementById('cHeroText').value.trim(),
+            footerFb:        document.getElementById('cFooterFb').value.trim(),
+            footerIg:        document.getElementById('cFooterIg').value.trim(),
+            footerYt:        document.getElementById('cFooterYt').value.trim(),
+            footerCopyright: document.getElementById('cFooterCopy').value.trim(),
+            noticeCards:     cards,
+            updatedAt:       new Date().toISOString()
+        };
+
+        try {
+            await fbPut('siteContent', payload);
+            showStatus('contentStatus','✅ Site content saved successfully! Changes will reflect on website.','success');
+        } catch(e) {
+            showStatus('contentStatus','❌ Save failed: '+e.message,'error');
+        }
+    }
+
+    // ===== LIGHTBOX =====
+    function viewMedia(url, type) {
+        const lb  = document.getElementById('lightbox');
+        const img = document.getElementById('lightboxImg');
+        const vid = document.getElementById('lightboxVid');
+        img.style.display = 'none'; vid.style.display = 'none';
+        if (type === 'img') { img.src = url; img.style.display = 'block'; }
+        else { vid.src = url; vid.style.display = 'block'; }
+        lb.classList.add('active');
+    }
+    function closeLightbox() {
+        document.getElementById('lightbox').classList.remove('active');
+        document.getElementById('lightboxVid').pause?.();
+    }
+
+    // ===== DB STATUS =====
+    async function checkDbStatus() {
+        const el = document.getElementById('dbStatus');
+        try {
+            await fbGet('_ping');
+            el.textContent = '✅ Firebase Connected — garhani-b65bd';
+            el.className = 'db-status ok';
+        } catch(e) {
+            el.textContent = '❌ Connection failed — ' + e.message;
+            el.className = 'db-status err';
+        }
+    }
+
+    // ===== BACKUP =====
+    async function backupData() {
+        showStatus('backupStatus','Downloading...','info');
+        try {
+            const data = await fbGet('');
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type:'application/json' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = `garhani_backup_${new Date().toISOString().slice(0,10)}.json`;
+            a.click();
+            showStatus('backupStatus','✅ Backup downloaded!','success');
+        } catch(e) { showStatus('backupStatus','❌ '+e.message,'error'); }
+    }
+
+    // ===== DELETE ALL =====
+    async function deleteAllPhotos() {
+        if (!confirm('Delete ALL photos? This cannot be undone!')) return;
+        try { await fbDelete('gallery/photos'); loadPhotos(); alert('All photos deleted.'); }
+        catch(e) { alert('Error: '+e.message); }
+    }
+    async function deleteAllVideos() {
+        if (!confirm('Delete ALL videos? This cannot be undone!')) return;
+        try { await fbDelete('gallery/videos'); loadVideos(); alert('All videos deleted.'); }
+        catch(e) { alert('Error: '+e.message); }
+    }
+    async function deleteAllAnnouncements() {
+        if (!confirm('Delete ALL announcements?')) return;
+        try { await fbDelete('announcements'); loadAnnouncements(); alert('All announcements deleted.'); }
+        catch(e) { alert('Error: '+e.message); }
+    }
+</script>
+
+</body>
+</html>
