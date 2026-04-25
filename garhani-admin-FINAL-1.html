@@ -1,0 +1,2164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Garhani Admin Panel</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        :root {
+            --primary: #2d5016; --secondary: #6b8e23; --accent: #d4a574;
+            --danger: #dc3545; --success: #28a745; --light: #f5f3f0;
+            --warn: #e67e22;
+        }
+        body { font-family:'Segoe UI',sans-serif; background:#f0ece6; color:#333; }
+
+        /* RIPPLE */
+        .ripple-host { position:relative; overflow:hidden; }
+        .ripple {
+            position:absolute; border-radius:50%; background:rgba(255,255,255,0.42);
+            transform:scale(0); animation:ripple-anim 0.55s linear; pointer-events:none;
+        }
+        @keyframes ripple-anim { to { transform:scale(4); opacity:0; } }
+
+        /* LOGIN */
+        .login-container {
+            display:flex; justify-content:center; align-items:center;
+            min-height:100vh;
+            background:linear-gradient(135deg, var(--primary), var(--secondary));
+        }
+        .login-box {
+            background:white; padding:3rem 2rem; border-radius:15px;
+            box-shadow:0 10px 40px rgba(0,0,0,0.2); width:90%; max-width:380px; text-align:center;
+        }
+        .login-icon { font-size:3.5rem; margin-bottom:1rem; }
+        .login-box h2 { color:var(--primary); margin-bottom:0.3rem; }
+        .login-box p  { color:#888; font-size:0.9rem; margin-bottom:1.5rem; }
+        .login-box input {
+            width:100%; padding:0.85rem 1rem; border:2px solid #ddd; border-radius:8px;
+            font-size:1rem; margin-bottom:1rem; outline:none; transition:border 0.3s;
+        }
+        .login-box input:focus { border-color:var(--primary); }
+        .login-btn {
+            width:100%; padding:0.85rem; background:linear-gradient(135deg,var(--primary),var(--secondary));
+            color:white; border:none; border-radius:8px; font-size:1rem;
+            font-weight:600; cursor:pointer; transition:all 0.3s;
+        }
+        .login-btn:hover { opacity:0.9; transform:translateY(-2px); }
+        #loginError { color:var(--danger); font-size:0.9rem; margin-top:0.8rem; display:none; }
+
+        /* ADMIN */
+        .admin-section { display:none; }
+        .admin-header {
+            background:linear-gradient(135deg,var(--primary),var(--secondary));
+            color:white; padding:1.2rem 2rem;
+            display:flex; justify-content:space-between; align-items:center;
+            flex-wrap:wrap; gap:0.5rem; position:sticky; top:0; z-index:100;
+            box-shadow:0 4px 15px rgba(45,80,22,0.4);
+        }
+        .admin-header h1 { font-size:1.3rem; }
+        .admin-header p  { font-size:0.8rem; opacity:0.85; }
+        .logout-btn {
+            background:rgba(255,255,255,0.15); color:white;
+            border:1px solid rgba(255,255,255,0.4);
+            padding:0.5rem 1.2rem; border-radius:20px;
+            cursor:pointer; font-size:0.9rem; transition:all 0.3s;
+        }
+        .logout-btn:hover { background:rgba(255,255,255,0.3); }
+
+        /* CONTAINER */
+        .container { max-width:1100px; margin:0 auto; padding:2rem 1rem; }
+
+        /* STATS */
+        .stats-box { display:grid; grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); gap:1rem; margin-bottom:2rem; }
+        .stat-card {
+            background:white; padding:1.2rem 1rem; border-radius:12px; text-align:center;
+            box-shadow:0 4px 15px rgba(45,80,22,0.1);
+        }
+        .stat-number { font-size:2rem; font-weight:700; color:var(--primary); }
+        .stat-label { font-size:0.78rem; color:#888; margin-top:0.2rem; }
+
+        /* TABS */
+        .tabs { display:flex; flex-wrap:wrap; gap:0.5rem; margin-bottom:1.5rem; }
+        .tab-btn {
+            background:white; color:var(--primary); border:2px solid var(--primary);
+            padding:0.5rem 1.1rem; border-radius:25px; cursor:pointer;
+            font-weight:600; font-size:0.88rem; transition:all 0.3s;
+        }
+        .tab-btn.active, .tab-btn:hover { background:var(--primary); color:white; }
+        .tab-content { display:none; }
+        .tab-content.active { display:block; }
+
+        /* CARD */
+        .card {
+            background:white; border-radius:12px; padding:1.5rem;
+            box-shadow:0 4px 20px rgba(45,80,22,0.08); margin-bottom:1.5rem;
+        }
+        .card-title { font-size:1.05rem; font-weight:700; color:var(--primary); margin-bottom:1.2rem; }
+
+        /* UPLOAD AREA */
+        .upload-area {
+            border:2px dashed #c8d8b0; border-radius:12px; padding:2rem;
+            text-align:center; cursor:pointer; transition:all 0.3s; background:#fafdf6;
+        }
+        .upload-area:hover, .upload-area.drag-over { border-color:var(--primary); background:#f0f7e8; }
+        .upload-icon { font-size:2.5rem; margin-bottom:0.5rem; }
+        .upload-text { color:#777; font-size:0.92rem; margin-bottom:0.8rem; }
+        .upload-input { display:none; }
+
+        /* BUTTONS */
+        .btn {
+            display:inline-flex; align-items:center; gap:0.4rem;
+            padding:0.6rem 1.3rem; border-radius:25px; border:none;
+            cursor:pointer; font-weight:600; font-size:0.9rem; transition:all 0.3s;
+        }
+        .btn-primary { background:linear-gradient(135deg,var(--primary),var(--secondary)); color:white; }
+        .btn-primary:hover { transform:translateY(-2px); box-shadow:0 5px 15px rgba(45,80,22,0.3); }
+        .btn-danger  { background:var(--danger); color:white; }
+        .btn-danger:hover { opacity:0.85; }
+        .btn-warn    { background:var(--warn); color:white; }
+        .btn-sm { padding:0.35rem 0.8rem; font-size:0.8rem; border-radius:15px; }
+
+        /* STATUS */
+        .status-msg { font-size:0.88rem; margin-top:0.7rem; padding:0.5rem 0.8rem; border-radius:6px; }
+        .status-msg.info    { background:#e8f4fd; color:#1565c0; }
+        .status-msg.success { background:#e8f5e9; color:#2e7d32; }
+        .status-msg.error   { background:#fdecea; color:#c62828; }
+
+        /* GALLERY GRID */
+        .gallery-grid {
+            display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr));
+            gap:1rem; margin-top:1rem;
+        }
+        .gallery-card {
+            position:relative; border-radius:10px; overflow:hidden;
+            aspect-ratio:1; background:#e8e4df;
+            box-shadow:0 3px 10px rgba(0,0,0,0.1); transition:all 0.3s;
+        }
+        .gallery-card:hover { transform:translateY(-4px); box-shadow:0 8px 20px rgba(0,0,0,0.15); }
+        .gallery-card img, .gallery-card video { width:100%; height:100%; object-fit:cover; }
+        .gallery-card-overlay {
+            position:absolute; top:0; left:0; right:0; bottom:0;
+            background:rgba(0,0,0,0.55); display:flex;
+            align-items:center; justify-content:center; gap:0.5rem;
+            opacity:0; transition:opacity 0.3s;
+        }
+        .gallery-card:hover .gallery-card-overlay { opacity:1; }
+        .icon-btn {
+            width:36px; height:36px; border-radius:50%; border:none;
+            cursor:pointer; display:flex; align-items:center; justify-content:center;
+            font-size:0.9rem; transition:all 0.3s;
+        }
+        .view-btn   { background:rgba(255,255,255,0.9); color:#333; }
+        .delete-btn { background:var(--danger); color:white; }
+
+        /* FORM INPUTS */
+        .form-group { margin-bottom:1rem; }
+        .form-group label { font-size:0.85rem; color:#555; font-weight:600; display:block; margin-bottom:0.4rem; }
+        .form-group input, .form-group textarea, .form-group select {
+            width:100%; padding:0.65rem 0.9rem;
+            border:2px solid #ddd; border-radius:8px; font-size:0.93rem;
+            font-family:inherit; outline:none; transition:border 0.3s; resize:vertical;
+        }
+        .form-group input:focus, .form-group textarea:focus { border-color:var(--primary); }
+        .form-row { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
+        @media(max-width:600px) { .form-row { grid-template-columns:1fr; } }
+
+        /* NOTICE CARD EDITOR */
+        .notice-card-editor {
+            background:#f9f7f4; border-radius:8px; padding:1rem;
+            border:1px solid #e0d8ce; margin-bottom:0.8rem; position:relative;
+        }
+        .notice-card-editor .remove-card {
+            position:absolute; top:0.5rem; right:0.5rem;
+            background:var(--danger); color:white; border:none;
+            width:24px; height:24px; border-radius:50%; cursor:pointer;
+            font-size:0.85rem; display:flex; align-items:center; justify-content:center;
+        }
+
+        /* ANNOUNCEMENT CARDS */
+        .ann-row {
+            display:flex; align-items:flex-start; justify-content:space-between;
+            gap:1rem; padding:1rem; background:#f9f7f4; border-radius:8px;
+            margin-bottom:0.8rem; border-left:4px solid var(--accent);
+        }
+        .ann-row-info { flex:1; }
+        .ann-row-info .ann-title { font-weight:700; color:var(--primary); }
+        .ann-row-info .ann-date  { font-size:0.8rem; color:#999; }
+        .ann-row-info .ann-body  { color:#555; font-size:0.9rem; margin-top:0.2rem; }
+        .ann-row-actions { display:flex; gap:0.4rem; align-items:center; }
+
+        /* LIGHTBOX */
+        .lightbox {
+            display:none; position:fixed; top:0; left:0; width:100%; height:100%;
+            background:rgba(0,0,0,0.9); z-index:9000;
+            align-items:center; justify-content:center;
+        }
+        .lightbox.active { display:flex; }
+        .lightbox img, .lightbox video { max-width:90vw; max-height:90vh; border-radius:8px; }
+        .lightbox-close {
+            position:fixed; top:1rem; right:1rem;
+            background:white; border:none; font-size:1.5rem;
+            width:42px; height:42px; border-radius:50%; cursor:pointer;
+        }
+
+        /* DB STATUS */
+        .db-status { padding:0.8rem 1rem; border-radius:8px; background:#f0f0f0; font-size:0.9rem; }
+        .db-status.ok  { background:#e8f5e9; color:#2e7d32; }
+        .db-status.err { background:#fdecea; color:#c62828; }
+
+        /* LOADING */
+        .loading { text-align:center; padding:2rem; color:var(--primary); }
+        .loading-spinner {
+            display:inline-block; width:22px; height:22px;
+            border:3px solid rgba(45,80,22,0.2); border-top-color:var(--primary);
+            border-radius:50%; animation:spin 0.8s linear infinite; margin-right:8px; vertical-align:middle;
+        }
+        @keyframes spin { to { transform:rotate(360deg); } }
+
+        .upload-progress {
+            background:#e0e0e0; border-radius:20px; height:8px; margin-top:0.5rem; overflow:hidden;
+        }
+        .upload-progress-bar {
+            height:100%; background:linear-gradient(90deg,var(--primary),var(--secondary));
+            border-radius:20px; transition:width 0.4s;
+        }
+
+        @media(max-width:640px) { .admin-header h1 { font-size:1.1rem; } }
+    </style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-container" id="loginSection">
+    <div class="login-box">
+        <div class="login-icon">🌾</div>
+        <h2>Garhani Admin</h2>
+        <p>Enter password to manage the website</p>
+        <input type="password" id="passwordInput" placeholder="Admin password..." onkeydown="if(event.key==='Enter') handleLogin()">
+        <button class="login-btn ripple-host" onclick="handleLogin()">
+            <i class="fas fa-sign-in-alt"></i> Login
+        </button>
+        <div id="loginError"></div>
+    </div>
+</div>
+
+<!-- ADMIN PANEL -->
+<div id="adminSection" class="admin-section">
+
+    <div class="admin-header">
+        <div>
+            <h1>🌾 Garhani Admin Panel</h1>
+            <p>Full website control</p>
+        </div>
+        <button class="logout-btn ripple-host" onclick="handleLogout()">
+            <i class="fas fa-sign-out-alt"></i> Logout
+        </button>
+    </div>
+
+    <div class="container">
+
+        <!-- STATS -->
+        <div class="stats-box">
+            <div class="stat-card">
+                <div class="stat-number" id="photoCount">–</div>
+                <div class="stat-label">Photos</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="videoCount">–</div>
+                <div class="stat-label">Videos</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="annCount">–</div>
+                <div class="stat-label">Announcements</div>
+            </div>
+        </div>
+
+        <!-- TABS -->
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('tabPhotos',this)"><i class="fas fa-images"></i> Photos</button>
+            <button class="tab-btn" onclick="switchTab('tabVideos',this)"><i class="fas fa-video"></i> Videos</button>
+            <button class="tab-btn" onclick="switchTab('tabAnnouncements',this)"><i class="fas fa-bullhorn"></i> Announcements</button>
+            <button class="tab-btn" onclick="switchTab('tabContent',this)"><i class="fas fa-edit"></i> Site Content</button>
+            <button class="tab-btn" onclick="switchTab('tabFestivals',this)"><i class="fas fa-star"></i> Festivals</button>
+            <button class="tab-btn" onclick="switchTab('tabPanchayat',this)"><i class="fas fa-landmark"></i> Panchayat</button>
+            <button class="tab-btn" onclick="switchTab('tabVikas',this)"><i class="fas fa-hard-hat"></i> Vikas Karya</button>
+            <button class="tab-btn" onclick="switchTab('tabBlog',this)"><i class="fas fa-newspaper"></i> Blog</button>
+            <button class="tab-btn" onclick="switchTab('tabPoll',this)"><i class="fas fa-poll"></i> Poll</button>
+            <button class="tab-btn" onclick="switchTab('tabAchieve',this)"><i class="fas fa-trophy"></i> Achievements</button>
+            <button class="tab-btn" onclick="switchTab('tabEmergency',this)"><i class="fas fa-phone-alt"></i> Emergency</button>
+            <button class="tab-btn" onclick="switchTab('tabTour',this)"><i class="fas fa-film"></i> Virtual Tour</button>
+            <button class="tab-btn" onclick="switchTab('tabSuvichar',this)"><i class="fas fa-sun"></i> Suvichar</button>
+            <button class="tab-btn" onclick="switchTab('tabFtree',this)"><i class="fas fa-users"></i> Family Tree</button>
+            <button class="tab-btn" onclick="switchTab('tabCalendar',this)"><i class="fas fa-calendar"></i> Calendar</button>
+            <button class="tab-btn" onclick="switchTab('tabSettings',this)"><i class="fas fa-cog"></i> Settings</button>
+        </div>
+
+        <!-- ===== PHOTOS TAB ===== -->
+        <div id="tabPhotos" class="tab-content active">
+            <div class="card">
+                <div class="card-title">📸 Upload Photos (ImgBB — Free Hosting)</div>
+                <div class="upload-area" id="photoUploadArea"
+                     ondrop="handlePhotoDrop(event)"
+                     ondragover="handleDragOver(event,'photoUploadArea')"
+                     ondragleave="handleDragLeave(event,'photoUploadArea')"
+                     onclick="document.getElementById('photoInput').click()">
+                    <div class="upload-icon">📷</div>
+                    <p class="upload-text">Drag photos here or click to select<br><small style="color:#aaa">JPG/PNG/WEBP — Multiple select supported</small></p>
+                    <input type="file" id="photoInput" class="upload-input" accept="image/*" multiple onchange="handlePhotoSelect(event)">
+                    <button class="btn btn-primary ripple-host" onclick="event.stopPropagation();document.getElementById('photoInput').click()">
+                        <i class="fas fa-folder-open"></i> Choose Photos
+                    </button>
+                </div>
+                <div id="photoStatus"></div>
+                <div class="upload-progress" id="photoProgress" style="display:none"><div class="upload-progress-bar" id="photoProgressBar" style="width:0%"></div></div>
+            </div>
+            <div class="card">
+                <div class="card-title">📸 All Photos</div>
+                <div class="gallery-grid" id="photosGrid">
+                    <div class="loading"><span class="loading-spinner"></span> Loading...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== VIDEOS TAB ===== -->
+        <div id="tabVideos" class="tab-content">
+            <div class="card">
+                <div class="card-title">🎬 Upload Video File</div>
+                <div class="upload-area" id="videoUploadArea"
+                     ondrop="handleVideoDrop(event)"
+                     ondragover="handleDragOver(event,'videoUploadArea')"
+                     ondragleave="handleDragLeave(event,'videoUploadArea')"
+                     onclick="document.getElementById('videoFileInput').click()">
+                    <div class="upload-icon">🎬</div>
+                    <p class="upload-text">Drag video here or click to select<br><small style="color:#aaa">MP4 / MOV / WEBM — Max ~50MB recommended</small></p>
+                    <input type="file" id="videoFileInput" class="upload-input" accept="video/*" multiple onchange="handleVideoFileSelect(event)">
+                    <button class="btn btn-primary ripple-host" onclick="event.stopPropagation();document.getElementById('videoFileInput').click()">
+                        <i class="fas fa-folder-open"></i> Choose Video
+                    </button>
+                </div>
+                <div id="videoFileStatus"></div>
+                <div class="upload-progress" id="videoFileProgress" style="display:none">
+                    <div class="upload-progress-bar" id="videoFileProgressBar" style="width:0%"></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">🔗 Ya YouTube / Direct URL paste karo</div>
+                <div class="form-group">
+                    <label>Video URL (YouTube link / direct MP4 URL)</label>
+                    <input type="url" id="videoUrlInput" placeholder="https://youtube.com/watch?v=... ya https://example.com/video.mp4">
+                </div>
+                <div class="form-group">
+                    <label>Video Title</label>
+                    <input type="text" id="videoTitleInput" placeholder="e.g. Village Festival 2025">
+                </div>
+                <button class="btn btn-primary ripple-host" onclick="addVideoByUrl()">
+                    <i class="fas fa-plus"></i> Add Video
+                </button>
+                <div id="videoStatus"></div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">🎬 All Videos</div>
+                <div class="gallery-grid" id="videosGrid">
+                    <div class="loading"><span class="loading-spinner"></span> Loading...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== ANNOUNCEMENTS TAB ===== -->
+        <div id="tabAnnouncements" class="tab-content">
+            <div class="card">
+                <div class="card-title">📢 Add Announcement</div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Title *</label>
+                        <input type="text" id="annTitle" placeholder="e.g. Village Meeting">
+                    </div>
+                    <div class="form-group">
+                        <label>Date</label>
+                        <input type="date" id="annDate">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Details *</label>
+                    <textarea id="annBody" rows="3" placeholder="Announcement details..."></textarea>
+                </div>
+                <button class="btn btn-primary ripple-host" onclick="addAnnouncement()">
+                    <i class="fas fa-plus"></i> Post Announcement
+                </button>
+                <p style="font-size:0.78rem;color:#aaa;margin-top:0.5rem;">💡 Announcement post hote hi jo log notifications ON kar chuke hain unhe automatically phone pe notification milegi!</p>
+                <div id="annStatus"></div>
+            </div>
+            <div class="card">
+                <div class="card-title">📢 All Announcements</div>
+                <div id="annList"><div class="loading"><span class="loading-spinner"></span> Loading...</div></div>
+            </div>
+        </div>
+
+        <!-- ===== SITE CONTENT TAB ===== -->
+        <div id="tabContent" class="tab-content">
+
+            <div class="card">
+                <div class="card-title">📰 Ticker / Marquee Text</div>
+                <div class="form-group">
+                    <label>Top Ticker Text</label>
+                    <input type="text" id="cTickerTop" placeholder="🌾 Welcome to Garhani Village • Bhojpur Pride • ...">
+                </div>
+                <div class="form-group">
+                    <label>Bottom Ticker Text</label>
+                    <input type="text" id="cTickerBottom" placeholder="👨‍💻 Managed by Aayush Yadav • ...">
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">🏷️ Header Section</div>
+                <div class="form-group">
+                    <label>Site Title (e.g. 🌾 Garhani)</label>
+                    <input type="text" id="cSiteTitle" placeholder="🌾 Garhani">
+                </div>
+                <div class="form-group">
+                    <label>Subtitle</label>
+                    <input type="text" id="cSiteSubtitle" placeholder="Pride of Bihar • भोजपुर का गर्व">
+                </div>
+                <div class="form-group">
+                    <label>Location Line</label>
+                    <input type="text" id="cSiteLocation" placeholder="Bhojpur District, Bihar, India">
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">🏡 Hero Section</div>
+                <div class="form-group">
+                    <label>Hero Heading</label>
+                    <input type="text" id="cHeroTitle" placeholder="🏡 Welcome to Garhani Village">
+                </div>
+                <div class="form-group">
+                    <label>Typing Animation Lines <small style="color:#aaa;font-weight:400;">(har line alag alag type hogi)</small></label>
+                    <div id="typingLinesEditor"></div>
+                    <button class="btn btn-primary ripple-host" onclick="addTypingLine()" style="margin-top:0.5rem;font-size:0.82rem;">
+                        <i class="fas fa-plus"></i> Add Line
+                    </button>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">📋 About Cards (Notice Board)</div>
+                <div id="noticeCardsEditor"></div>
+                <button class="btn btn-primary ripple-host" onclick="addNoticeCard()" style="margin-top:0.5rem;">
+                    <i class="fas fa-plus"></i> Add Card
+                </button>
+            </div>
+
+            <div class="card">
+                <div class="card-title">📊 Stats Counter (Garhani at a Glance)</div>
+                <p style="color:#888;font-size:0.85rem;margin-bottom:1rem;">Ye numbers website pe animated counter ke roop mein dikhte hain.</p>
+                <div id="statsEditor"></div>
+                <button class="btn btn-primary ripple-host" onclick="addStatRow()" style="margin-top:0.5rem;">
+                    <i class="fas fa-plus"></i> Add Stat
+                </button>
+            </div>
+
+            <div class="card">
+                <div class="card-title">🔗 Footer Links</div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Facebook URL</label>
+                        <input type="url" id="cFooterFb" placeholder="https://facebook.com/...">
+                    </div>
+                    <div class="form-group">
+                        <label>Instagram URL</label>
+                        <input type="url" id="cFooterIg" placeholder="https://instagram.com/...">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>YouTube URL</label>
+                    <input type="url" id="cFooterYt" placeholder="https://youtube.com/...">
+                </div>
+                <div class="form-group">
+                    <label>Footer Copyright Text</label>
+                    <input type="text" id="cFooterCopy" placeholder="© 2025 Garhani Village Showcase — Bhojpur, Bihar">
+                </div>
+            </div>
+
+            <button class="btn btn-primary ripple-host" onclick="saveSiteContent()" style="width:100%; justify-content:center; padding:0.9rem;">
+                <i class="fas fa-save"></i> Save All Site Content
+            </button>
+            <div id="contentStatus" style="margin-top:0.7rem;"></div>
+        </div>
+
+        <!-- ===== SUVICHAR TAB ===== -->
+        <div id="tabSuvichar" class="tab-content">
+            <div class="card">
+                <div class="card-title">🌅 Aaj ka Suvichar Set Karo</div>
+                <p style="color:#888;font-size:0.82rem;margin-bottom:1rem;">Agar khaali rakho toh website automatically daily quotes dikhayegi.</p>
+                <div class="form-row">
+                    <div class="form-group"><label>Emoji</label><input type="text" id="svEmoji" placeholder="🌅" style="font-size:1.3rem;"></div>
+                    <div class="form-group"><label>Author / Source</label><input type="text" id="svAuthor" placeholder="— Kabir Das, Lok Kahavat..."></div>
+                </div>
+                <div class="form-group"><label>Quote / Suvichar *</label><textarea id="svQuote" rows="3" placeholder="Aaj ka suvichar yahan likho..."></textarea></div>
+                <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+                    <button class="btn btn-primary ripple-host" onclick="saveSuvichar()"><i class="fas fa-save"></i> Save Suvichar</button>
+                    <button class="btn btn-danger ripple-host" onclick="deleteSuvichar()"><i class="fas fa-trash"></i> Hatao (Auto mode)</button>
+                </div>
+                <div id="suvicharStatus" style="margin-top:0.7rem;"></div>
+            </div>
+            <div class="card" id="suvicharPreviewCard" style="display:none">
+                <div class="card-title">👁️ Current Suvichar</div>
+                <div id="suvicharPreview" style="padding:1rem;background:#f0f9f0;border-radius:10px;color:var(--primary);font-style:italic;"></div>
+            </div>
+        </div>
+
+        <!-- ===== FAMILY TREE TAB ===== -->
+        <div id="tabFtree" class="tab-content">
+            <div class="card">
+                <div class="card-title">👨‍👩‍👧‍👦 Naya Parivar Add Karo</div>
+                <div class="form-row">
+                    <div class="form-group"><label>Parivar ka Naam *</label><input type="text" id="ftName" placeholder="e.g. Yadav, Singh, Sharma"></div>
+                    <div class="form-group"><label>Emoji</label><input type="text" id="ftEmoji" placeholder="🏠" style="font-size:1.3rem;"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>Mohalla / Tola *</label><input type="text" id="ftMohalla" placeholder="e.g. Purab Tola"></div>
+                    <div class="form-group"><label>Ward</label><input type="number" id="ftWard" placeholder="1-11" min="1" max="11"></div>
+                </div>
+                <div class="form-group"><label>Parivar ke baare mein (optional)</label><textarea id="ftAbout" rows="2" placeholder="Kuch likho is parivar ke baare mein..."></textarea></div>
+                <div class="form-group">
+                    <label>Sadasya (Members) — Ek ek karke add karo</label>
+                    <div id="ftMembersEditor"></div>
+                    <button class="btn btn-primary btn-sm ripple-host" onclick="addFtMember()" style="margin-top:0.4rem;"><i class="fas fa-plus"></i> Add Member</button>
+                </div>
+                <button class="btn btn-primary ripple-host" onclick="saveFamilyEntry()" style="margin-top:0.5rem;"><i class="fas fa-save"></i> Save Parivar</button>
+                <div id="ftreeStatus" style="margin-top:0.7rem;"></div>
+            </div>
+            <div class="card">
+                <div class="card-title">👨‍👩‍👧‍👦 All Families</div>
+                <div id="ftreeAdminList"><div class="loading"><span class="loading-spinner"></span> Loading...</div></div>
+            </div>
+        </div>
+
+        <!-- ===== VIRTUAL TOUR TAB ===== -->
+        <div id="tabTour" class="tab-content">
+            <div class="card">
+                <div class="card-title">🎥 Tour Slide Add Karo</div>
+                <p style="color:#888;font-size:0.82rem;margin-bottom:1rem;">Photo URL daalo ya sirf emoji+description se bhi sundar slide banta hai!</p>
+                <div class="form-row">
+                    <div class="form-group"><label>Jagah ka Naam *</label><input type="text" id="tTitle" placeholder="e.g. Garhani Railway Station"></div>
+                    <div class="form-group"><label>Location Line</label><input type="text" id="tLocation" placeholder="e.g. Ward 3, Garhani"></div>
+                </div>
+                <div class="form-group"><label>Description *</label><textarea id="tDesc" rows="2" placeholder="Is jagah ke baare mein kuch likho..."></textarea></div>
+                <div class="form-row">
+                    <div class="form-group"><label>Photo URL (optional — ImgBB link)</label><input type="url" id="tUrl" placeholder="https://i.ibb.co/..."></div>
+                    <div class="form-group"><label>Emoji (agar photo nahi hai)</label><input type="text" id="tEmoji" placeholder="🚂" style="font-size:1.3rem;"></div>
+                </div>
+                <div class="form-group">
+                    <label>Background Color (agar photo nahi)</label>
+                    <select id="tBg">
+                        <option value="linear-gradient(135deg,#1a4a0a,#3d8b1e)">🌿 Green (Khet)</option>
+                        <option value="linear-gradient(135deg,#1e3a5f,#2d6a9f)">🔵 Blue (Station)</option>
+                        <option value="linear-gradient(135deg,#7a3000,#cc6600)">🟠 Orange (Mandir)</option>
+                        <option value="linear-gradient(135deg,#4a0000,#a00000)">🔴 Red (Hospital)</option>
+                        <option value="linear-gradient(135deg,#1a1a4a,#3535a0)">🟣 Purple (Office)</option>
+                        <option value="linear-gradient(135deg,#3d3200,#8b7200)">🟡 Gold (Bazar)</option>
+                    </select>
+                </div>
+                <button class="btn btn-primary ripple-host" onclick="addTourSlide()"><i class="fas fa-plus"></i> Add Slide</button>
+                <div id="tourStatus" style="margin-top:0.7rem;"></div>
+            </div>
+            <div class="card">
+                <div class="card-title">🎥 All Tour Slides</div>
+                <p style="color:#aaa;font-size:0.75rem;margin-bottom:0.8rem;">Slides isi order mein dikhenge jis order mein add ki hain.</p>
+                <div id="tourAdminList"><div class="loading"><span class="loading-spinner"></span> Loading...</div></div>
+            </div>
+        </div>
+
+        <!-- ===== BLOG TAB ===== -->
+        <div id="tabBlog" class="tab-content">
+            <div class="card">
+                <div class="card-title">📰 Naya Blog Post</div>
+                <div class="form-row">
+                    <div class="form-group"><label>Title *</label><input type="text" id="bTitle" placeholder="Post ka title"></div>
+                    <div class="form-group"><label>Emoji</label><input type="text" id="bEmoji" placeholder="📰" style="font-size:1.3rem;"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Category</label>
+                        <select id="bCategory">
+                            <option>Khabar</option><option>Vikas</option><option>Tyohar</option>
+                            <option>Shiksha</option><option>Khel</option><option>Anya</option>
+                        </select>
+                    </div>
+                    <div class="form-group"><label>Author</label><input type="text" id="bAuthor" placeholder="Lekhak ka naam"></div>
+                </div>
+                <div class="form-group"><label>Content *</label><textarea id="bContent" rows="5" placeholder="Post likho yahan..."></textarea></div>
+                <button class="btn btn-primary ripple-host" onclick="addBlogPost()"><i class="fas fa-plus"></i> Publish Post</button>
+                <div id="blogStatus" style="margin-top:0.7rem;"></div>
+            </div>
+            <div class="card">
+                <div class="card-title">📰 All Posts</div>
+                <div id="blogAdminList"><div class="loading"><span class="loading-spinner"></span> Loading...</div></div>
+            </div>
+        </div>
+
+        <!-- ===== POLL TAB ===== -->
+        <div id="tabPoll" class="tab-content">
+            <div class="card">
+                <div class="card-title">🗳️ Active Poll Set Karo</div>
+                <div class="form-row">
+                    <div class="form-group"><label>Poll Question *</label><input type="text" id="pQuestion" placeholder="e.g. Gaon mein sabse zaroori kya hai?"></div>
+                    <div class="form-group"><label>Emoji</label><input type="text" id="pEmoji" placeholder="🗳️"></div>
+                </div>
+                <div id="pollOptionsEditor">
+                    <div class="form-group"><label>Options</label></div>
+                </div>
+                <button class="btn btn-primary btn-sm ripple-host" onclick="addPollOption()" style="margin-bottom:0.8rem;"><i class="fas fa-plus"></i> Option Add Karo</button><br>
+                <button class="btn btn-primary ripple-host" onclick="savePoll()"><i class="fas fa-save"></i> Poll Activate Karo</button>
+                <button class="btn btn-danger ripple-host" onclick="deletePoll()" style="margin-left:0.5rem;"><i class="fas fa-trash"></i> Poll Hatao</button>
+                <div id="pollStatus" style="margin-top:0.7rem;"></div>
+            </div>
+            <div class="card">
+                <div class="card-title">📊 Current Poll Results</div>
+                <div id="pollAdminResults"><div class="loading"><span class="loading-spinner"></span> Loading...</div></div>
+            </div>
+        </div>
+
+        <!-- ===== ACHIEVEMENTS TAB ===== -->
+        <div id="tabAchieve" class="tab-content">
+            <div class="card">
+                <div class="card-title">🏆 Naya Achievement Add Karo</div>
+                <div class="form-row">
+                    <div class="form-group"><label>Student ka Naam *</label><input type="text" id="aName" placeholder="e.g. Rahul Kumar"></div>
+                    <div class="form-group"><label>Class / Standard</label><input type="text" id="aClass" placeholder="e.g. 12th, B.Tech"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>School / College</label><input type="text" id="aSchool" placeholder="School ya college ka naam"></div>
+                    <div class="form-group"><label>Saal</label><input type="text" id="aYear" placeholder="2024"></div>
+                </div>
+                <div class="form-group"><label>Achievement *</label><input type="text" id="aAchievement" placeholder="e.g. 95% marks, District Topper, IIT Selected"></div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Medal</label>
+                        <select id="aMedal">
+                            <option value="gold">🥇 Gold</option>
+                            <option value="silver">🥈 Silver</option>
+                            <option value="bronze">🥉 Bronze</option>
+                            <option value="special">🏆 Special</option>
+                        </select>
+                    </div>
+                    <div class="form-group"><label>Extra Detail</label><input type="text" id="aDesc" placeholder="Aur kuch likhna ho toh..."></div>
+                </div>
+                <button class="btn btn-primary ripple-host" onclick="addAchievement()"><i class="fas fa-plus"></i> Add Achievement</button>
+                <div id="achieveStatus" style="margin-top:0.7rem;"></div>
+            </div>
+            <div class="card">
+                <div class="card-title">🎓 All Achievements</div>
+                <div id="achieveAdminList"><div class="loading"><span class="loading-spinner"></span> Loading...</div></div>
+            </div>
+        </div>
+
+        <!-- ===== EMERGENCY TAB ===== -->
+        <div id="tabEmergency" class="tab-content">
+            <div class="card">
+                <div class="card-title">🚨 Nagar Panchayat Contact Number</div>
+                <div class="form-group"><label>Phone Number</label><input type="text" id="ePanchayatNo" placeholder="e.g. 06182-XXXXXX"></div>
+                <button class="btn btn-primary ripple-host" onclick="saveEmergencyContacts()"><i class="fas fa-save"></i> Save</button>
+                <div id="emergencyStatus" style="margin-top:0.7rem;"></div>
+            </div>
+            <div class="card">
+                <div class="card-title">➕ Extra Emergency Contact Add Karo</div>
+                <div class="form-row">
+                    <div class="form-group"><label>Naam *</label><input type="text" id="eExtraName" placeholder="e.g. Doctor Ramesh"></div>
+                    <div class="form-group"><label>Emoji</label><input type="text" id="eExtraEmoji" placeholder="👨‍⚕️"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>Number *</label><input type="text" id="eExtraNumber" placeholder="Phone number"></div>
+                    <div class="form-group"><label>Sub-title</label><input type="text" id="eExtraSub" placeholder="e.g. Ward 5 ke Doctor"></div>
+                </div>
+                <button class="btn btn-primary ripple-host" onclick="addExtraContact()"><i class="fas fa-plus"></i> Add Contact</button>
+            </div>
+            <div class="card">
+                <div class="card-title">📋 Extra Contacts</div>
+                <div id="extraContactsList"><div class="loading"><span class="loading-spinner"></span> Loading...</div></div>
+            </div>
+        </div>
+
+        <!-- ===== VIKAS KARYA TAB ===== -->
+        <div id="tabVikas" class="tab-content">
+            <div class="card">
+                <div class="card-title">🏗️ Naya Vikas Karya Add Karo</div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Karya ka Naam *</label>
+                        <input type="text" id="vTitle" placeholder="e.g. Nali Nirman, Sadak Marammat">
+                    </div>
+                    <div class="form-group">
+                        <label>Emoji</label>
+                        <input type="text" id="vEmoji" placeholder="🏗️" style="font-size:1.3rem;">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Prakar (Type) *</label>
+                        <select id="vType">
+                            <option value="chairman">⭐ Chairman ka Karya</option>
+                            <option value="ward">🏘️ Ward ka Karya</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Ward Number (agar ward ka ho)</label>
+                        <input type="text" id="vWard" placeholder="e.g. 1, 2, 5...">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Status *</label>
+                        <select id="vStatus">
+                            <option value="done">✅ Poora Hua</option>
+                            <option value="ongoing">🔄 Chal Raha Hai</option>
+                            <option value="planned">📋 Yojana Mein Hai</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Saal (Year)</label>
+                        <input type="text" id="vYear" placeholder="e.g. 2023, 2024">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Vivaran (Description)</label>
+                    <textarea id="vDesc" rows="2" placeholder="Is karya ke baare mein thoda likho..."></textarea>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Lagat (Cost) — optional</label>
+                        <input type="text" id="vCost" placeholder="e.g. ₹2.5 Lakh">
+                    </div>
+                    <div class="form-group">
+                        <label>Labhaarthi (Beneficiary) — optional</label>
+                        <input type="text" id="vBeneficiary" placeholder="e.g. 120 ghar, Ward 3 ke log">
+                    </div>
+                </div>
+                <button class="btn btn-primary ripple-host" onclick="addVikasKarya()">
+                    <i class="fas fa-plus"></i> Add Vikas Karya
+                </button>
+                <div id="vikasStatus" style="margin-top:0.7rem;"></div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">📋 Sab Vikas Karya</div>
+                <div style="display:flex;flex-wrap:wrap;gap:0.4rem;margin-bottom:1rem;" id="vikasFilterBar">
+                    <button class="btn btn-primary btn-sm ripple-host" onclick="loadVikasAdmin('all',this)">Sab</button>
+                    <button class="btn btn-sm ripple-host" style="background:#fce7f3;color:#db2777;" onclick="loadVikasAdmin('chairman',this)">⭐ Chairman</button>
+                    <button class="btn btn-sm ripple-host" style="background:#ede9fe;color:#7c3aed;" onclick="loadVikasAdmin('ward',this)">🏘️ Ward</button>
+                    <button class="btn btn-sm ripple-host" style="background:#dcfce7;color:#16a34a;" onclick="loadVikasAdmin('done',this)">✅ Poora</button>
+                    <button class="btn btn-sm ripple-host" style="background:#fef3c7;color:#d97706;" onclick="loadVikasAdmin('ongoing',this)">🔄 Chal Raha</button>
+                </div>
+                <div id="vikasAdminList"><div class="loading"><span class="loading-spinner"></span> Loading...</div></div>
+            </div>
+        </div>
+
+        <!-- ===== PANCHAYAT TAB ===== -->
+        <div id="tabPanchayat" class="tab-content">
+
+            <div class="card">
+                <div class="card-title">⭐ Mukhiya / Gram Pradhan</div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Mukhiya ka Naam *</label>
+                        <input type="text" id="pMukhiyaName" placeholder="e.g. Ram Kumar Singh">
+                    </div>
+                    <div class="form-group">
+                        <label>Avatar Emoji</label>
+                        <input type="text" id="pMukhiyaEmoji" placeholder="👨" style="font-size:1.3rem;">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Detail Line</label>
+                    <input type="text" id="pMukhiyaDetail" placeholder="e.g. Elected 2021 • Garhani Gram Panchayat • Bhojpur, Bihar">
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">👥 Ward Members (9 Wards)</div>
+                <p style="color:#888;font-size:0.82rem;margin-bottom:1rem;">Har ward ka number, naam aur confirmed status edit karo.</p>
+                <div id="wardEditor"></div>
+            </div>
+
+            <button class="btn btn-primary ripple-host" onclick="savePanchayat()" style="width:100%;justify-content:center;padding:0.9rem;">
+                <i class="fas fa-save"></i> Save Panchayat Data
+            </button>
+            <div id="panchayatStatus" style="margin-top:0.7rem;"></div>
+        </div>
+
+        <!-- ===== FESTIVALS TAB ===== -->
+        <div id="tabFestivals" class="tab-content">
+            <div class="card">
+                <div class="card-title">🎊 Add / Edit Festival Card</div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Festival Name *</label>
+                        <input type="text" id="fName" placeholder="e.g. Chhath Puja">
+                    </div>
+                    <div class="form-group">
+                        <label>Emoji</label>
+                        <input type="text" id="fEmoji" placeholder="🌅" style="font-size:1.3rem;">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Date / Month</label>
+                        <input type="text" id="fDate" placeholder="e.g. Kartik Shukla Shashthi">
+                    </div>
+                    <div class="form-group">
+                        <label>Card Color</label>
+                        <select id="fColor">
+                            <option value="chhath">🟠 Chhath (Orange-Yellow)</option>
+                            <option value="holi">🟣 Holi (Pink-Purple)</option>
+                            <option value="diwali">🟡 Diwali (Gold)</option>
+                            <option value="navratri">💜 Navratri (Purple-Orange)</option>
+                            <option value="eid">🟢 Eid (Green)</option>
+                            <option value="christmas">🔴 Christmas (Red-Green)</option>
+                            <option value="default">🌿 Default (Village Green)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea id="fDesc" rows="2" placeholder="Festival ke baare mein thoda likho..."></textarea>
+                </div>
+                <div class="form-group" style="display:flex;align-items:center;gap:0.5rem;">
+                    <input type="checkbox" id="fPopular" style="width:auto;">
+                    <label for="fPopular" style="margin:0;font-weight:400;">Popular badge dikhao</label>
+                </div>
+                <button class="btn btn-primary ripple-host" onclick="addFestival()">
+                    <i class="fas fa-plus"></i> Add Festival Card
+                </button>
+                <div id="festivalStatus" style="margin-top:0.7rem;"></div>
+            </div>
+            <div class="card">
+                <div class="card-title">🎊 All Festival Cards</div>
+                <div id="festivalList"><div class="loading"><span class="loading-spinner"></span> Loading...</div></div>
+            </div>
+        </div>
+
+        <!-- ===== CALENDAR TAB ===== -->
+        <div id="tabCalendar" class="tab-content">
+            <div class="card">
+                <div class="card-title">📅 Add Event to Calendar</div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Date *</label>
+                        <input type="date" id="evDate">
+                    </div>
+                    <div class="form-group">
+                        <label>Event Name *</label>
+                        <input type="text" id="evName" placeholder="e.g. Village Meeting, Chhath Puja">
+                    </div>
+                </div>
+                <button class="btn btn-primary ripple-host" onclick="addCalEvent()">
+                    <i class="fas fa-plus"></i> Add Event
+                </button>
+                <div id="calEventStatus" style="margin-top:0.7rem;"></div>
+            </div>
+            <div class="card">
+                <div class="card-title">📅 All Calendar Events</div>
+                <div id="calEventAdminList"><div class="loading"><span class="loading-spinner"></span> Loading...</div></div>
+            </div>
+        </div>
+
+        <!-- ===== SETTINGS TAB ===== -->
+        <div id="tabSettings" class="tab-content">
+            <div class="card">
+                <div class="card-title">📡 Database Status</div>
+                <div id="dbStatus" class="db-status">Checking connection...</div>
+            </div>
+            <div class="card">
+                <div class="card-title">💾 Backup</div>
+                <button class="btn btn-primary ripple-host" onclick="backupData()" style="width:100%; justify-content:center;">
+                    <i class="fas fa-download"></i> Download JSON Backup
+                </button>
+                <div id="backupStatus" style="margin-top:0.7rem;"></div>
+            </div>
+            <div class="card">
+                <div class="card-title">🗑️ Danger Zone</div>
+                <p style="color:#999; font-size:0.85rem; margin-bottom:1rem;">⚠️ These actions cannot be undone.</p>
+                <div style="display:flex; flex-wrap:wrap; gap:0.8rem;">
+                    <button class="btn btn-danger ripple-host" onclick="deleteAllPhotos()">
+                        <i class="fas fa-trash"></i> Delete All Photos
+                    </button>
+                    <button class="btn btn-danger ripple-host" onclick="deleteAllVideos()">
+                        <i class="fas fa-trash"></i> Delete All Videos
+                    </button>
+                    <button class="btn btn-danger ripple-host" onclick="deleteAllAnnouncements()">
+                        <i class="fas fa-trash"></i> Delete All Announcements
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </div><!-- /container -->
+</div><!-- /adminSection -->
+
+<!-- LIGHTBOX -->
+<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+    <button class="lightbox-close" onclick="closeLightbox()">✕</button>
+    <img id="lightboxImg" style="display:none">
+    <video id="lightboxVid" controls style="display:none"></video>
+</div>
+
+<script>
+    // ============================================================
+    //  CONFIG
+    // ============================================================
+    const DB_URL       = "https://garhani-b65bd-default-rtdb.firebaseio.com";
+    const ADMIN_PASS   = "Aayu8090";
+    // ImgBB free API key — go to https://imgbb.com/signup then API → get key
+    // Replace with YOUR key:
+    const IMGBB_KEY    = "YOUR_IMGBB_API_KEY";
+    // ============================================================
+
+    // ===== FIREBASE REST =====
+    async function fbGet(path) {
+        const r = await fetch(`${DB_URL}/${path}.json`);
+        if (!r.ok) throw new Error('GET ' + r.status);
+        return r.json();
+    }
+    async function fbPut(path, data) {
+        const r = await fetch(`${DB_URL}/${path}.json`, {
+            method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)
+        });
+        if (!r.ok) throw new Error('PUT ' + r.status);
+        return r.json();
+    }
+    async function fbPost(path, data) {
+        const r = await fetch(`${DB_URL}/${path}.json`, {
+            method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)
+        });
+        if (!r.ok) throw new Error('POST ' + r.status);
+        return r.json();
+    }
+    async function fbDelete(path) {
+        const r = await fetch(`${DB_URL}/${path}.json`, { method:'DELETE' });
+        if (!r.ok) throw new Error('DELETE ' + r.status);
+    }
+
+    // ===== RIPPLE =====
+    document.addEventListener('click', function(e) {
+        const h = e.target.closest('.ripple-host');
+        if (!h) return;
+        const rect = h.getBoundingClientRect();
+        const size = Math.max(rect.width, rect.height) * 2;
+        const r = document.createElement('span');
+        r.className = 'ripple';
+        r.style.cssText = `width:${size}px;height:${size}px;left:${e.clientX-rect.left-size/2}px;top:${e.clientY-rect.top-size/2}px;`;
+        h.appendChild(r);
+        r.addEventListener('animationend', () => r.remove());
+    });
+
+    // ===== LOGIN =====
+    function handleLogin() {
+        const pwd = document.getElementById('passwordInput').value.trim();
+        if (!pwd) { showLoginErr('Please enter password.'); return; }
+        if (pwd === ADMIN_PASS) {
+            document.getElementById('loginSection').style.display = 'none';
+            document.getElementById('adminSection').style.display = 'block';
+            initAdmin();
+        } else {
+            showLoginErr('❌ Wrong password.');
+            document.getElementById('passwordInput').value = '';
+        }
+    }
+    function showLoginErr(msg) {
+        const el = document.getElementById('loginError');
+        el.textContent = msg; el.style.display = 'block';
+    }
+    function handleLogout() {
+        if (!confirm('Logout?')) return;
+        document.getElementById('loginSection').style.display = 'flex';
+        document.getElementById('adminSection').style.display = 'none';
+        document.getElementById('passwordInput').value = '';
+    }
+
+    // ===== INIT =====
+    function initAdmin() {
+        loadPhotos(); loadVideos(); loadAnnouncements(); loadSiteContent();
+        loadFestivalsAdmin(); loadPanchayatAdmin(); loadVikasAdmin();
+        loadBlogAdmin(); loadPollAdmin(); loadAchieveAdmin(); loadExtraContactsAdmin();
+        loadTourAdmin(); loadSuvicharAdmin(); loadFtreeAdmin();
+        loadCalEventsAdmin(); checkDbStatus();
+    }
+
+    // ===== TABS =====
+    function switchTab(id, btn) {
+        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        btn.classList.add('active');
+    }
+
+    // ===== STATUS HELPERS =====
+    function showStatus(id, msg, type) {
+        const el = document.getElementById(id);
+        el.textContent = msg; el.className = 'status-msg ' + type; el.style.display = 'block';
+        if (type === 'success') setTimeout(() => { el.style.display='none'; }, 3000);
+    }
+
+    // ===== DRAG DROP =====
+    function handleDragOver(e, id) { e.preventDefault(); document.getElementById(id).classList.add('drag-over'); }
+    function handleDragLeave(e, id) { document.getElementById(id).classList.remove('drag-over'); }
+    function handlePhotoDrop(e) {
+        e.preventDefault();
+        document.getElementById('photoUploadArea').classList.remove('drag-over');
+        uploadPhotos(Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/')));
+    }
+    function handlePhotoSelect(e) { uploadPhotos(Array.from(e.target.files)); }
+
+    // ===== IMGBB UPLOAD =====
+    async function uploadToImgBB(file) {
+        const form = new FormData();
+        const b64  = await toBase64(file);
+        form.append('image', b64.split(',')[1]);
+        const res  = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_KEY}`, { method:'POST', body:form });
+        const json = await res.json();
+        if (!json.success) throw new Error('ImgBB upload failed: ' + (json.error?.message || 'unknown'));
+        return json.data.url;
+    }
+
+    function toBase64(file) {
+        return new Promise((res, rej) => {
+            const r = new FileReader();
+            r.onload = e => res(e.target.result);
+            r.onerror = rej;
+            r.readAsDataURL(file);
+        });
+    }
+
+    async function uploadPhotos(files) {
+        if (!files.length) return;
+        const progressWrap = document.getElementById('photoProgress');
+        const progressBar  = document.getElementById('photoProgressBar');
+        progressWrap.style.display = 'block';
+        showStatus('photoStatus', `Uploading 0/${files.length}...`, 'info');
+        let done = 0;
+        for (const file of files) {
+            try {
+                showStatus('photoStatus', `Uploading ${done+1}/${files.length}: ${file.name}`, 'info');
+                let url;
+                if (IMGBB_KEY === 'YOUR_IMGBB_API_KEY') {
+                    // Fallback: store small base64 directly (only if no ImgBB key)
+                    url = await toBase64(file);
+                } else {
+                    url = await uploadToImgBB(file);
+                }
+                await fbPost('gallery/photos', { url, name:file.name, uploadedAt:new Date().toISOString() });
+                done++;
+                progressBar.style.width = `${Math.round(done/files.length*100)}%`;
+                showStatus('photoStatus', `✅ ${done}/${files.length} uploaded`, done===files.length?'success':'info');
+            } catch(err) {
+                showStatus('photoStatus', `❌ ${err.message}`, 'error');
+                break;
+            }
+        }
+        document.getElementById('photoInput').value = '';
+        progressWrap.style.display = 'none';
+        progressBar.style.width = '0%';
+        if (done > 0) loadPhotos();
+    }
+
+    // ===== LOAD PHOTOS =====
+    async function loadPhotos() {
+        const grid = document.getElementById('photosGrid');
+        grid.innerHTML = '<div class="loading"><span class="loading-spinner"></span> Loading...</div>';
+        try {
+            const data = await fbGet('gallery/photos');
+            grid.innerHTML = '';
+            let count = 0;
+            if (data) {
+                Object.entries(data).forEach(([key, photo]) => {
+                    count++;
+                    const card = document.createElement('div');
+                    card.className = 'gallery-card';
+                    card.innerHTML = `
+                        <img src="${photo.url}" alt="${photo.name||'photo'}" loading="lazy">
+                        <div class="gallery-card-overlay">
+                            <button class="icon-btn view-btn" onclick="event.stopPropagation();viewMedia('${photo.url}','img')" title="View"><i class="fas fa-eye"></i></button>
+                            <button class="icon-btn delete-btn" onclick="event.stopPropagation();deletePhoto('${key}')" title="Delete"><i class="fas fa-trash"></i></button>
+                        </div>`;
+                    grid.appendChild(card);
+                });
+            }
+            if (!count) grid.innerHTML = '<div class="loading">No photos yet.</div>';
+            document.getElementById('photoCount').textContent = count;
+        } catch(e) {
+            grid.innerHTML = `<div class="loading" style="color:var(--danger)">❌ ${e.message}</div>`;
+        }
+    }
+
+    async function deletePhoto(key) {
+        if (!confirm('Delete this photo?')) return;
+        try { await fbDelete('gallery/photos/' + key); loadPhotos(); }
+        catch(e) { alert('Error: ' + e.message); }
+    }
+
+    // ===== VIDEO URL =====
+    function handleVideoDrop(e) {
+        e.preventDefault();
+        document.getElementById('videoUploadArea').classList.remove('drag-over');
+        const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('video/'));
+        if (!files.length) { showStatus('videoFileStatus', '❌ Koi video file nahi mili.', 'error'); return; }
+        uploadVideoFiles(files);
+    }
+    function handleVideoFileSelect(e) { uploadVideoFiles(Array.from(e.target.files)); }
+
+    async function uploadVideoFiles(files) {
+        if (!files.length) return;
+        const progressWrap = document.getElementById('videoFileProgress');
+        const progressBar  = document.getElementById('videoFileProgressBar');
+        progressWrap.style.display = 'block';
+        let done = 0;
+        for (const file of files) {
+            try {
+                showStatus('videoFileStatus', `Uploading ${done+1}/${files.length}: ${file.name}`, 'info');
+                // Base64 store — works for small videos, warn for large
+                if (file.size > 10 * 1024 * 1024) {
+                    showStatus('videoFileStatus', `⚠️ ${file.name} is ${(file.size/1024/1024).toFixed(1)}MB — large videos slow down Firebase. YouTube URL use karo better results ke liye.`, 'error');
+                    continue;
+                }
+                const b64 = await toBase64(file);
+                await fbPost('gallery/videos', {
+                    url: b64,
+                    name: file.name.replace(/\.[^.]+$/, ''),
+                    type: 'direct',
+                    uploadedAt: new Date().toISOString()
+                });
+                done++;
+                progressBar.style.width = `${Math.round(done / files.length * 100)}%`;
+                showStatus('videoFileStatus', `✅ ${done}/${files.length} uploaded`, done === files.length ? 'success' : 'info');
+            } catch(err) {
+                showStatus('videoFileStatus', `❌ ${err.message}`, 'error');
+                break;
+            }
+        }
+        document.getElementById('videoFileInput').value = '';
+        progressWrap.style.display = 'none';
+        progressBar.style.width = '0%';
+        if (done > 0) loadVideos();
+    }
+
+    function toYouTubeEmbed(url) {
+        // Handles: youtu.be/ID, youtube.com/watch?v=ID, youtube.com/shorts/ID, already embed URLs
+        let id = null;
+        try {
+            const u = new URL(url);
+            if (u.hostname.includes('youtu.be')) {
+                id = u.pathname.slice(1);
+            } else if (u.hostname.includes('youtube.com')) {
+                if (u.pathname.includes('/shorts/')) {
+                    id = u.pathname.split('/shorts/')[1].split('/')[0];
+                } else if (u.pathname.includes('/embed/')) {
+                    return url; // already embed
+                } else {
+                    id = u.searchParams.get('v');
+                }
+            }
+        } catch(e) {}
+        if (id) return `https://www.youtube.com/embed/${id.split('&')[0]}`;
+        return url; // return as-is if not YouTube
+    }
+
+    async function addVideoByUrl() {
+        const rawUrl = document.getElementById('videoUrlInput').value.trim();
+        const title  = document.getElementById('videoTitleInput').value.trim();
+        if (!rawUrl) { showStatus('videoStatus','Enter a video URL.','error'); return; }
+        const url = toYouTubeEmbed(rawUrl);
+        const isYT = url.includes('youtube.com/embed');
+        try {
+            await fbPost('gallery/videos', { url, name:title||'Video', type: isYT ? 'youtube' : 'direct', uploadedAt:new Date().toISOString() });
+            document.getElementById('videoUrlInput').value = '';
+            document.getElementById('videoTitleInput').value = '';
+            showStatus('videoStatus','✅ Video added!','success');
+            loadVideos();
+        } catch(e) { showStatus('videoStatus','❌ '+e.message,'error'); }
+    }
+
+    async function loadVideos() {
+        const grid = document.getElementById('videosGrid');
+        grid.innerHTML = '<div class="loading"><span class="loading-spinner"></span> Loading...</div>';
+        try {
+            const data = await fbGet('gallery/videos');
+            grid.innerHTML = '';
+            let count = 0;
+            if (data) {
+                Object.entries(data).forEach(([key, video]) => {
+                    count++;
+                    const card = document.createElement('div');
+                    card.className = 'gallery-card';
+                    const isYT = video.url && video.url.includes('youtube.com/embed');
+                    if (isYT) {
+                        // YouTube thumbnail
+                        const ytId = video.url.split('/embed/')[1]?.split('?')[0];
+                        card.innerHTML = `
+                            <img src="https://img.youtube.com/vi/${ytId}/hqdefault.jpg" alt="${video.name||'video'}" style="width:100%;height:100%;object-fit:cover;">
+                            <div class="gallery-card-overlay">
+                                <button class="icon-btn view-btn" onclick="event.stopPropagation();viewMedia('${video.url}','yt')" title="Play"><i class="fas fa-play"></i></button>
+                                <button class="icon-btn delete-btn" onclick="event.stopPropagation();deleteVideo('${key}')" title="Delete"><i class="fas fa-trash"></i></button>
+                            </div>`;
+                    } else {
+                        card.innerHTML = `
+                            <div style="display:flex;align-items:center;justify-content:center;height:100%;background:#1a1a1a;color:white;font-size:2rem;flex-direction:column;gap:0.3rem;">
+                                🎬<div style="font-size:0.7rem;padding:0 0.5rem;text-align:center;opacity:0.8;">${video.name||'Video'}</div>
+                            </div>
+                            <div class="gallery-card-overlay">
+                                <button class="icon-btn view-btn" onclick="event.stopPropagation();viewMedia('${video.url}','vid')" title="View"><i class="fas fa-play"></i></button>
+                                <button class="icon-btn delete-btn" onclick="event.stopPropagation();deleteVideo('${key}')" title="Delete"><i class="fas fa-trash"></i></button>
+                            </div>`;
+                    }
+                    grid.appendChild(card);
+                });
+            }
+            if (!count) grid.innerHTML = '<div class="loading">No videos yet.</div>';
+            document.getElementById('videoCount').textContent = count;
+        } catch(e) {
+            grid.innerHTML = `<div class="loading" style="color:var(--danger)">❌ ${e.message}</div>`;
+        }
+    }
+
+    async function deleteVideo(key) {
+        if (!confirm('Delete this video?')) return;
+        try { await fbDelete('gallery/videos/' + key); loadVideos(); }
+        catch(e) { alert('Error: ' + e.message); }
+    }
+
+    // ===== ANNOUNCEMENTS =====
+    async function addAnnouncement() {
+        const title = document.getElementById('annTitle').value.trim();
+        const body  = document.getElementById('annBody').value.trim();
+        const date  = document.getElementById('annDate').value;
+        if (!title || !body) { showStatus('annStatus','Title and details required.','error'); return; }
+        try {
+            await fbPost('announcements', {
+                title, body,
+                date: date ? new Date(date).toLocaleDateString('en-IN',{day:'numeric',month:'long',year:'numeric'}) : new Date().toLocaleDateString('en-IN',{day:'numeric',month:'long',year:'numeric'}),
+                createdAt: new Date().toISOString()
+            });
+            document.getElementById('annTitle').value = '';
+            document.getElementById('annBody').value  = '';
+            document.getElementById('annDate').value  = '';
+            showStatus('annStatus','✅ Announcement posted!','success');
+            loadAnnouncements();
+        } catch(e) { showStatus('annStatus','❌ '+e.message,'error'); }
+    }
+
+    async function loadAnnouncements() {
+        const list = document.getElementById('annList');
+        list.innerHTML = '<div class="loading"><span class="loading-spinner"></span> Loading...</div>';
+        try {
+            const data = await fbGet('announcements');
+            list.innerHTML = '';
+            let count = 0;
+            if (data) {
+                Object.entries(data).reverse().forEach(([key, ann]) => {
+                    count++;
+                    const row = document.createElement('div');
+                    row.className = 'ann-row';
+                    row.innerHTML = `
+                        <div class="ann-row-info">
+                            <div class="ann-date">${ann.date||''}</div>
+                            <div class="ann-title">${ann.title||''}</div>
+                            <div class="ann-body">${ann.body||''}</div>
+                        </div>
+                        <div class="ann-row-actions">
+                            <button class="btn btn-danger btn-sm ripple-host" onclick="deleteAnnouncement('${key}')"><i class="fas fa-trash"></i></button>
+                        </div>`;
+                    list.appendChild(row);
+                });
+            }
+            if (!count) list.innerHTML = '<div class="loading">No announcements yet.</div>';
+            document.getElementById('annCount').textContent = count;
+        } catch(e) {
+            list.innerHTML = `<div class="loading" style="color:var(--danger)">❌ ${e.message}</div>`;
+        }
+    }
+
+    async function deleteAnnouncement(key) {
+        if (!confirm('Delete this announcement?')) return;
+        try { await fbDelete('announcements/' + key); loadAnnouncements(); }
+        catch(e) { alert('Error: ' + e.message); }
+    }
+
+    // ===== SITE CONTENT =====
+    let noticeCardCount = 0;
+
+    function addNoticeCard(title='', text='') {
+        noticeCardCount++;
+        const i = noticeCardCount;
+        const editor = document.getElementById('noticeCardsEditor');
+        const div = document.createElement('div');
+        div.className = 'notice-card-editor';
+        div.id = `nc_${i}`;
+        div.innerHTML = `
+            <button class="remove-card" onclick="document.getElementById('nc_${i}').remove()">✕</button>
+            <div class="form-group" style="margin-bottom:0.5rem;">
+                <label>Card Title</label>
+                <input type="text" id="nc_title_${i}" value="${title.replace(/"/g,'&quot;')}" placeholder="e.g. 📍 Village Name">
+            </div>
+            <div class="form-group" style="margin-bottom:0;">
+                <label>Card Text</label>
+                <textarea id="nc_text_${i}" rows="2" placeholder="Description...">${text}</textarea>
+            </div>`;
+        editor.appendChild(div);
+    }
+
+    async function loadSiteContent() {
+        try {
+            const c = await fbGet('siteContent');
+            if (!c) { addNoticeCard(); return; }
+            if (c.tickerText)      document.getElementById('cTickerTop').value     = c.tickerText;
+            if (c.bottomTicker)    document.getElementById('cTickerBottom').value  = c.bottomTicker;
+            if (c.siteTitle)       document.getElementById('cSiteTitle').value     = c.siteTitle;
+            if (c.siteSubtitle)    document.getElementById('cSiteSubtitle').value  = c.siteSubtitle;
+            if (c.siteLocation)    document.getElementById('cSiteLocation').value  = c.siteLocation;
+            if (c.heroTitle)       document.getElementById('cHeroTitle').value     = c.heroTitle;
+            document.getElementById('typingLinesEditor').innerHTML = '';
+            tlCount = 0;
+            const lines = c.typingLines?.length ? c.typingLines : DEFAULT_TYPING_LINES;
+            lines.forEach(l => addTypingLine(l));
+            if (c.footerFb)        document.getElementById('cFooterFb').value      = c.footerFb;
+            if (c.footerIg)        document.getElementById('cFooterIg').value      = c.footerIg;
+            if (c.footerYt)        document.getElementById('cFooterYt').value      = c.footerYt;
+            if (c.footerCopyright) document.getElementById('cFooterCopy').value    = c.footerCopyright;
+            document.getElementById('noticeCardsEditor').innerHTML = '';
+            noticeCardCount = 0;
+            document.getElementById('statsEditor').innerHTML = '';
+            statRowCount = 0;
+            if (c.stats && c.stats.length) {
+                c.stats.forEach(s => addStatRow(s.emoji, s.value, s.suffix, s.label));
+            } else {
+                // Default stats
+                [
+                    ['👥','Population','8500',''],
+                    ['🏠','Households','1200',''],
+                    ['📐','Area','12','km²'],
+                    ['🏫','Schools','4',''],
+                    ['🌾','Agriculture','85','%'],
+                    ['📅','Years of History','500','+']
+                ].forEach(([e,l,v,s]) => addStatRow(e,v,s,l));
+            }
+            if (c.noticeCards && c.noticeCards.length) {
+                c.noticeCards.forEach(card => addNoticeCard(card.title, card.text));
+            } else {
+                addNoticeCard();
+            }
+        } catch(e) {
+            addNoticeCard();
+            document.getElementById('typingLinesEditor').innerHTML = '';
+            tlCount = 0;
+            DEFAULT_TYPING_LINES.forEach(l => addTypingLine(l));
+            [['👥','Population','8500',''],['🏠','Households','1200',''],['📐','Area','12','km²'],['🏫','Schools','4',''],['🌾','Agriculture','85','%'],['📅','Years of History','500','+']].forEach(([e,l,v,s]) => addStatRow(e,v,s,l));
+        }
+    }
+
+    // ===== SUVICHAR =====
+    async function saveSuvichar() {
+        const quote = document.getElementById('svQuote').value.trim();
+        if (!quote) { showStatus('suvicharStatus','Quote likhna zaroori hai!','error'); return; }
+        try {
+            await fbPut('suvichar', {
+                quote,
+                emoji:  document.getElementById('svEmoji').value.trim() || '🌅',
+                author: document.getElementById('svAuthor').value.trim(),
+                updatedAt: new Date().toISOString()
+            });
+            showStatus('suvicharStatus','✅ Suvichar save ho gaya!','success');
+            loadSuvicharAdmin();
+        } catch(e) { showStatus('suvicharStatus','❌ '+e.message,'error'); }
+    }
+
+    async function deleteSuvichar() {
+        if (!confirm('Suvichar hatana chahte ho? Auto mode on ho jayega.')) return;
+        try {
+            await fbDelete('suvichar');
+            document.getElementById('svQuote').value  = '';
+            document.getElementById('svEmoji').value  = '';
+            document.getElementById('svAuthor').value = '';
+            document.getElementById('suvicharPreviewCard').style.display = 'none';
+            showStatus('suvicharStatus','✅ Suvichar hata diya — ab automatic quotes dikhenge.','success');
+        } catch(e) { showStatus('suvicharStatus','❌ '+e.message,'error'); }
+    }
+
+    async function loadSuvicharAdmin() {
+        try {
+            const data = await fbGet('suvichar');
+            if (data && data.quote) {
+                document.getElementById('svQuote').value  = data.quote;
+                document.getElementById('svEmoji').value  = data.emoji || '';
+                document.getElementById('svAuthor').value = data.author || '';
+                document.getElementById('suvicharPreviewCard').style.display = 'block';
+                document.getElementById('suvicharPreview').textContent = (data.emoji||'🌅') + ' ' + data.quote + ' ' + (data.author||'');
+            }
+        } catch(e) {}
+    }
+
+    // ===== FAMILY TREE =====
+    let ftMemberCount = 0;
+    const ROLE_EMOJIS = { 'Pita':'👨', 'Mata':'👩', 'Beta':'👦', 'Beti':'👧', 'Dada':'👴', 'Dadi':'👵', 'Nana':'👴', 'Nani':'👵', 'Bhai':'👦', 'Behen':'👧', 'Pati':'👨', 'Patni':'👩' };
+
+    function addFtMember(name='', role='', emoji='') {
+        ftMemberCount++;
+        const i   = ftMemberCount;
+        const ed  = document.getElementById('ftMembersEditor');
+        const div = document.createElement('div');
+        div.id = `ftm_${i}`;
+        div.style.cssText = 'display:grid;grid-template-columns:50px 1fr 1fr auto;gap:0.4rem;margin-bottom:0.4rem;align-items:center;';
+        div.innerHTML = `
+            <input type="text" id="ftm_e_${i}" value="${emoji}" placeholder="👤"
+                style="padding:0.4rem;border:2px solid #ddd;border-radius:8px;font-size:1.1rem;text-align:center;">
+            <input type="text" id="ftm_n_${i}" value="${name}" placeholder="Naam"
+                style="padding:0.5rem 0.7rem;border:2px solid #ddd;border-radius:8px;font-size:0.88rem;">
+            <input type="text" id="ftm_r_${i}" value="${role}" placeholder="Role (Pita, Mata...)"
+                style="padding:0.5rem 0.7rem;border:2px solid #ddd;border-radius:8px;font-size:0.88rem;"
+                oninput="autoEmojiRole(${i})">
+            <button onclick="document.getElementById('ftm_${i}').remove()"
+                style="background:var(--danger);color:white;border:none;border-radius:50%;width:26px;height:26px;cursor:pointer;font-size:0.9rem;">✕</button>`;
+        ed.appendChild(div);
+    }
+
+    function autoEmojiRole(i) {
+        const role  = document.getElementById(`ftm_r_${i}`)?.value.trim();
+        const eInp  = document.getElementById(`ftm_e_${i}`);
+        if (eInp && !eInp.value && ROLE_EMOJIS[role]) {
+            eInp.value = ROLE_EMOJIS[role];
+        }
+    }
+
+    function getFtMembers() {
+        const members = [];
+        document.querySelectorAll('[id^="ftm_"]').forEach(div => {
+            if (!div.id.match(/^ftm_\d+$/)) return;
+            const i = div.id.replace('ftm_','');
+            const n = document.getElementById(`ftm_n_${i}`)?.value.trim();
+            const r = document.getElementById(`ftm_r_${i}`)?.value.trim();
+            const e = document.getElementById(`ftm_e_${i}`)?.value.trim();
+            if (n) members.push({ name:n, role:r||'', emoji:e||'👤' });
+        });
+        return members;
+    }
+
+    async function saveFamilyEntry() {
+        const name    = document.getElementById('ftName').value.trim();
+        const mohalla = document.getElementById('ftMohalla').value.trim();
+        if (!name || !mohalla) { showStatus('ftreeStatus','Parivar ka naam aur mohalla zaroori hai!','error'); return; }
+        const members = getFtMembers();
+        try {
+            await fbPost('familyTree', {
+                familyName: name,
+                emoji:      document.getElementById('ftEmoji').value.trim() || '🏠',
+                mohalla,
+                ward:       document.getElementById('ftWard').value.trim() || '?',
+                about:      document.getElementById('ftAbout').value.trim(),
+                members,
+                addedAt:    new Date().toISOString()
+            });
+            ['ftName','ftEmoji','ftMohalla','ftWard','ftAbout'].forEach(id => document.getElementById(id).value='');
+            document.getElementById('ftMembersEditor').innerHTML = '';
+            ftMemberCount = 0;
+            showStatus('ftreeStatus','✅ Parivar add ho gaya!','success');
+            loadFtreeAdmin();
+        } catch(e) { showStatus('ftreeStatus','❌ '+e.message,'error'); }
+    }
+
+    async function loadFtreeAdmin() {
+        const list = document.getElementById('ftreeAdminList');
+        list.innerHTML = '<div class="loading"><span class="loading-spinner"></span></div>';
+        try {
+            const data = await fbGet('familyTree');
+            list.innerHTML = '';
+            if (!data) { list.innerHTML='<div class="loading">Koi parivar nahi. Upar se add karo!</div>'; return; }
+            Object.entries(data).reverse().forEach(([key,f]) => {
+                const row = document.createElement('div');
+                row.style.cssText = 'display:flex;align-items:center;gap:0.8rem;padding:0.8rem;background:#f9f7f4;border-radius:10px;margin-bottom:0.6rem;';
+                row.innerHTML = `
+                    <div style="width:42px;height:42px;border-radius:10px;background:linear-gradient(135deg,var(--primary),var(--secondary));display:flex;align-items:center;justify-content:center;font-size:1.4rem;flex-shrink:0;">${f.emoji||'🏠'}</div>
+                    <div style="flex:1;">
+                        <div style="font-weight:700;color:var(--primary);">${f.familyName} Parivar</div>
+                        <div style="font-size:0.75rem;color:#aaa;">Ward ${f.ward||'?'} • ${f.mohalla||''} • ${(f.members||[]).length} sadasya</div>
+                    </div>
+                    <button class="btn btn-danger btn-sm ripple-host" onclick="deleteFtree('${key}')"><i class="fas fa-trash"></i></button>`;
+                list.appendChild(row);
+            });
+        } catch(e) { list.innerHTML=`<div class="loading" style="color:var(--danger)">❌ ${e.message}</div>`; }
+    }
+
+    async function deleteFtree(key) {
+        if (!confirm('Is parivar ki entry delete karna chahte ho?')) return;
+        try { await fbDelete('familyTree/'+key); loadFtreeAdmin(); } catch(e) { alert(e.message); }
+    }
+
+    // ===== VIRTUAL TOUR =====
+    async function addTourSlide() {
+        const title = document.getElementById('tTitle').value.trim();
+        const desc  = document.getElementById('tDesc').value.trim();
+        if (!title || !desc) { showStatus('tourStatus','Naam aur description zaroori hai!','error'); return; }
+        try {
+            await fbPost('virtualTour', {
+                title, desc,
+                location: document.getElementById('tLocation').value.trim(),
+                url:      document.getElementById('tUrl').value.trim(),
+                emoji:    document.getElementById('tEmoji').value.trim() || '🌾',
+                bg:       document.getElementById('tBg').value,
+                addedAt:  new Date().toISOString()
+            });
+            ['tTitle','tLocation','tDesc','tUrl','tEmoji'].forEach(id => document.getElementById(id).value='');
+            showStatus('tourStatus','✅ Slide add ho gayi!','success');
+            loadTourAdmin();
+        } catch(e) { showStatus('tourStatus','❌ '+e.message,'error'); }
+    }
+
+    async function loadTourAdmin() {
+        const list = document.getElementById('tourAdminList');
+        list.innerHTML = '<div class="loading"><span class="loading-spinner"></span></div>';
+        try {
+            const data = await fbGet('virtualTour');
+            list.innerHTML = '';
+            if (!data) { list.innerHTML='<div class="loading">Koi slide nahi. Upar se add karo!</div>'; return; }
+            Object.entries(data).forEach(([key,s]) => {
+                const row = document.createElement('div');
+                row.style.cssText = 'display:flex;align-items:center;gap:0.8rem;padding:0.8rem;background:#f9f7f4;border-radius:10px;margin-bottom:0.6rem;';
+                row.innerHTML = `
+                    <div style="width:50px;height:50px;border-radius:8px;background:${s.bg||'linear-gradient(135deg,#2d5016,#6b8e23)'};display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0;">
+                        ${s.url ? `<img src="${s.url}" style="width:100%;height:100%;object-fit:cover;border-radius:8px;">` : s.emoji||'🌾'}
+                    </div>
+                    <div style="flex:1;">
+                        <div style="font-weight:700;color:var(--primary);">${s.title}</div>
+                        <div style="font-size:0.75rem;color:#aaa;">${s.location||''}</div>
+                        <div style="font-size:0.82rem;color:#666;margin-top:2px;">${(s.desc||'').slice(0,60)}...</div>
+                    </div>
+                    <button class="btn btn-danger btn-sm ripple-host" onclick="deleteTourSlide('${key}')"><i class="fas fa-trash"></i></button>`;
+                list.appendChild(row);
+            });
+        } catch(e) { list.innerHTML=`<div class="loading" style="color:var(--danger)">❌ ${e.message}</div>`; }
+    }
+
+    async function deleteTourSlide(key) {
+        if (!confirm('Delete this slide?')) return;
+        try { await fbDelete('virtualTour/'+key); loadTourAdmin(); } catch(e) { alert(e.message); }
+    }
+
+    // ===== BLOG =====
+    async function addBlogPost() {
+        const title = document.getElementById('bTitle').value.trim();
+        const content = document.getElementById('bContent').value.trim();
+        if (!title || !content) { showStatus('blogStatus','Title aur content zaroori hai!','error'); return; }
+        try {
+            await fbPost('villageBlog', {
+                title, content,
+                emoji:    document.getElementById('bEmoji').value.trim()||'📰',
+                category: document.getElementById('bCategory').value,
+                author:   document.getElementById('bAuthor').value.trim()||'Garhani Team',
+                date:     new Date().toLocaleDateString('en-IN',{day:'numeric',month:'long',year:'numeric'}),
+                createdAt:new Date().toISOString()
+            });
+            ['bTitle','bContent','bEmoji','bAuthor'].forEach(id=>document.getElementById(id).value='');
+            showStatus('blogStatus','✅ Post published!','success');
+            loadBlogAdmin();
+        } catch(e) { showStatus('blogStatus','❌ '+e.message,'error'); }
+    }
+
+    async function loadBlogAdmin() {
+        const list = document.getElementById('blogAdminList');
+        list.innerHTML='<div class="loading"><span class="loading-spinner"></span></div>';
+        try {
+            const data = await fbGet('villageBlog');
+            list.innerHTML='';
+            if (!data) { list.innerHTML='<div class="loading">Koi post nahi.</div>'; return; }
+            Object.entries(data).reverse().forEach(([key,p]) => {
+                const row=document.createElement('div');
+                row.style.cssText='padding:0.8rem;background:#f9f7f4;border-radius:10px;margin-bottom:0.6rem;border-left:4px solid var(--secondary);display:flex;justify-content:space-between;align-items:flex-start;gap:0.5rem;';
+                row.innerHTML=`<div><div style="font-weight:700;color:var(--primary);">${p.emoji||'📰'} ${p.title}</div><div style="font-size:0.75rem;color:#aaa;">${p.category||''} • ${p.date||''} • ${p.author||''}</div></div>
+                    <button class="btn btn-danger btn-sm ripple-host" onclick="deleteBlogPost('${key}')"><i class="fas fa-trash"></i></button>`;
+                list.appendChild(row);
+            });
+        } catch(e) { list.innerHTML=`<div class="loading" style="color:var(--danger)">❌ ${e.message}</div>`; }
+    }
+
+    async function deleteBlogPost(key) {
+        if (!confirm('Delete this post?')) return;
+        try { await fbDelete('villageBlog/'+key); loadBlogAdmin(); } catch(e) { alert(e.message); }
+    }
+
+    // ===== POLL =====
+    let pollOptCount = 0;
+    function addPollOption(text='', emoji='') {
+        pollOptCount++;
+        const ed=document.getElementById('pollOptionsEditor');
+        const div=document.createElement('div');
+        div.id='po_'+pollOptCount;
+        div.style.cssText='display:flex;gap:0.4rem;margin-bottom:0.4rem;align-items:center;';
+        div.innerHTML=`<input type="text" id="po_e_${pollOptCount}" value="${emoji}" placeholder="🌾" style="width:44px;padding:0.4rem;border:2px solid #ddd;border-radius:8px;font-size:1.1rem;text-align:center;">
+            <input type="text" id="po_t_${pollOptCount}" value="${text}" placeholder="Option likho..." style="flex:1;padding:0.5rem 0.7rem;border:2px solid #ddd;border-radius:8px;font-size:0.88rem;">
+            <button onclick="document.getElementById('po_${pollOptCount}').remove()" style="background:var(--danger);color:white;border:none;border-radius:50%;width:26px;height:26px;cursor:pointer;">✕</button>`;
+        ed.appendChild(div);
+    }
+
+    async function savePoll() {
+        const question=document.getElementById('pQuestion').value.trim();
+        if (!question) { showStatus('pollStatus','Question zaroori hai!','error'); return; }
+        const options=[];
+        document.querySelectorAll('[id^="po_"]').forEach(div=>{
+            if(!div.id.match(/^po_\d+$/)) return;
+            const i=div.id.replace('po_','');
+            const t=document.getElementById('po_t_'+i)?.value.trim();
+            const e=document.getElementById('po_e_'+i)?.value.trim();
+            if(t) options.push({text:t,emoji:e||'•',votes:0});
+        });
+        if (options.length < 2) { showStatus('pollStatus','Kam se kam 2 options chahiye!','error'); return; }
+        try {
+            await fbPut('villagePoll/active', { id:'poll_'+Date.now(), question, emoji:document.getElementById('pEmoji').value.trim()||'🗳️', options, createdAt:new Date().toISOString() });
+            showStatus('pollStatus','✅ Poll active ho gayi!','success');
+            loadPollAdmin();
+        } catch(e) { showStatus('pollStatus','❌ '+e.message,'error'); }
+    }
+
+    async function deletePoll() {
+        if (!confirm('Poll delete karna chahte ho?')) return;
+        try { await fbDelete('villagePoll/active'); showStatus('pollStatus','Poll delete ho gayi.','success'); loadPollAdmin(); } catch(e) { alert(e.message); }
+    }
+
+    async function loadPollAdmin() {
+        const res=document.getElementById('pollAdminResults');
+        try {
+            const data=await fbGet('villagePoll/active');
+            if (!data) { res.innerHTML='<div class="loading">Koi active poll nahi.</div>'; return; }
+            const total=data.options?data.options.reduce((s,o)=>s+(o.votes||0),0):0;
+            res.innerHTML=`<div style="font-weight:700;color:var(--primary);margin-bottom:0.8rem;">${data.emoji||'🗳️'} ${data.question}</div>`
+                +(data.options||[]).map(o=>{
+                    const pct=total>0?Math.round((o.votes||0)/total*100):0;
+                    return `<div style="margin-bottom:0.6rem;"><div style="display:flex;justify-content:space-between;font-size:0.88rem;margin-bottom:3px;"><span>${o.emoji||'•'} ${o.text}</span><strong>${o.votes||0} (${pct}%)</strong></div>
+                        <div style="background:#e5e7eb;border-radius:8px;height:8px;overflow:hidden;"><div style="width:${pct}%;height:100%;background:linear-gradient(90deg,var(--primary),var(--secondary));border-radius:8px;transition:width 0.8s;"></div></div></div>`;
+                }).join('')
+                +`<div style="font-size:0.78rem;color:#888;margin-top:0.5rem;">Total votes: ${total}</div>`;
+        } catch(e) { res.innerHTML=`<div class="loading" style="color:var(--danger)">❌</div>`; }
+    }
+
+    // ===== ACHIEVEMENTS =====
+    async function addAchievement() {
+        const name=document.getElementById('aName').value.trim();
+        const achievement=document.getElementById('aAchievement').value.trim();
+        if (!name||!achievement) { showStatus('achieveStatus','Naam aur achievement zaroori hai!','error'); return; }
+        try {
+            await fbPost('achievements',{name,achievement,class:document.getElementById('aClass').value.trim(),school:document.getElementById('aSchool').value.trim(),year:document.getElementById('aYear').value.trim()||new Date().getFullYear(),medal:document.getElementById('aMedal').value,desc:document.getElementById('aDesc').value.trim(),addedAt:new Date().toISOString()});
+            ['aName','aClass','aSchool','aYear','aAchievement','aDesc'].forEach(id=>document.getElementById(id).value='');
+            showStatus('achieveStatus','✅ Achievement add ho gayi!','success');
+            loadAchieveAdmin();
+        } catch(e) { showStatus('achieveStatus','❌ '+e.message,'error'); }
+    }
+
+    async function loadAchieveAdmin() {
+        const list=document.getElementById('achieveAdminList');
+        list.innerHTML='<div class="loading"><span class="loading-spinner"></span></div>';
+        const MEDAL={gold:'🥇',silver:'🥈',bronze:'🥉',special:'🏆',default:'🎖️'};
+        try {
+            const data=await fbGet('achievements');
+            list.innerHTML='';
+            if (!data) { list.innerHTML='<div class="loading">Koi achievement nahi.</div>'; return; }
+            Object.entries(data).reverse().forEach(([key,a])=>{
+                const row=document.createElement('div');
+                row.style.cssText='padding:0.8rem;background:#f9f7f4;border-radius:10px;margin-bottom:0.6rem;border-left:4px solid var(--secondary);display:flex;justify-content:space-between;align-items:flex-start;gap:0.5rem;';
+                row.innerHTML=`<div><div style="font-weight:700;color:var(--primary);">${MEDAL[a.medal]||'🎖️'} ${a.name}</div><div style="font-size:0.82rem;color:#555;">${a.achievement}</div><div style="font-size:0.72rem;color:#aaa;">${a.class||''} ${a.school?'• '+a.school:''} ${a.year?'• '+a.year:''}</div></div>
+                    <button class="btn btn-danger btn-sm ripple-host" onclick="deleteAchievement('${key}')"><i class="fas fa-trash"></i></button>`;
+                list.appendChild(row);
+            });
+        } catch(e) { list.innerHTML=`<div class="loading" style="color:var(--danger)">❌</div>`; }
+    }
+
+    async function deleteAchievement(key) {
+        if (!confirm('Delete?')) return;
+        try { await fbDelete('achievements/'+key); loadAchieveAdmin(); } catch(e) { alert(e.message); }
+    }
+
+    // ===== EMERGENCY =====
+    async function saveEmergencyContacts() {
+        try {
+            const no=document.getElementById('ePanchayatNo').value.trim();
+            if (no) await fbPut('emergencyContacts/panchayatNo', no);
+            showStatus('emergencyStatus','✅ Saved!','success');
+        } catch(e) { showStatus('emergencyStatus','❌ '+e.message,'error'); }
+    }
+
+    async function addExtraContact() {
+        const name=document.getElementById('eExtraName').value.trim();
+        const number=document.getElementById('eExtraNumber').value.trim();
+        if (!name||!number) return;
+        try {
+            const existing=await fbGet('emergencyContacts/extra').catch(()=>null)||[];
+            const arr=Array.isArray(existing)?existing:[];
+            arr.push({name,number,emoji:document.getElementById('eExtraEmoji').value.trim()||'📞',sub:document.getElementById('eExtraSub').value.trim()});
+            await fbPut('emergencyContacts/extra',arr);
+            ['eExtraName','eExtraNumber','eExtraEmoji','eExtraSub'].forEach(id=>document.getElementById(id).value='');
+            showStatus('emergencyStatus','✅ Contact added!','success');
+            loadExtraContactsAdmin();
+        } catch(e) { alert(e.message); }
+    }
+
+    async function loadExtraContactsAdmin() {
+        const list=document.getElementById('extraContactsList');
+        try {
+            const data=await fbGet('emergencyContacts/extra');
+            list.innerHTML='';
+            if (!data||!data.length) { list.innerHTML='<div class="loading">Koi extra contact nahi.</div>'; return; }
+            data.forEach((c,i)=>{
+                list.innerHTML+=`<div style="padding:0.7rem;background:#f9f7f4;border-radius:8px;margin-bottom:0.5rem;display:flex;justify-content:space-between;align-items:center;">
+                    <span>${c.emoji||'📞'} <strong>${c.name}</strong> — ${c.number} ${c.sub?'('+c.sub+')':''}</span>
+                    <button class="btn btn-danger btn-sm" onclick="deleteExtraContact(${i})"><i class="fas fa-trash"></i></button>
+                </div>`;
+            });
+        } catch(e) {}
+    }
+
+    async function deleteExtraContact(idx) {
+        try {
+            const data=await fbGet('emergencyContacts/extra')||[];
+            data.splice(idx,1);
+            await fbPut('emergencyContacts/extra',data);
+            loadExtraContactsAdmin();
+        } catch(e) { alert(e.message); }
+    }
+
+    // ===== VIKAS KARYA =====
+    let vikasFilter = 'all';
+
+    async function addVikasKarya() {
+        const title = document.getElementById('vTitle').value.trim();
+        if (!title) { showStatus('vikasStatus','Karya ka naam zaroori hai!','error'); return; }
+        const payload = {
+            title,
+            emoji:       document.getElementById('vEmoji').value.trim() || '🔨',
+            type:        document.getElementById('vType').value,
+            ward:        document.getElementById('vWard').value.trim(),
+            status:      document.getElementById('vStatus').value,
+            year:        document.getElementById('vYear').value.trim(),
+            desc:        document.getElementById('vDesc').value.trim(),
+            cost:        document.getElementById('vCost').value.trim(),
+            beneficiary: document.getElementById('vBeneficiary').value.trim(),
+            addedAt:     new Date().toISOString()
+        };
+        try {
+            await fbPost('vikasKarya', payload);
+            ['vTitle','vEmoji','vWard','vYear','vDesc','vCost','vBeneficiary'].forEach(id => document.getElementById(id).value='');
+            showStatus('vikasStatus','✅ Vikas karya add ho gaya!','success');
+            loadVikasAdmin(vikasFilter);
+        } catch(e) { showStatus('vikasStatus','❌ '+e.message,'error'); }
+    }
+
+    async function loadVikasAdmin(filter='all', btn=null) {
+        vikasFilter = filter;
+        if (btn) {
+            document.querySelectorAll('#vikasFilterBar .btn').forEach(b => b.style.fontWeight='400');
+            btn.style.fontWeight = '700';
+        }
+        const list = document.getElementById('vikasAdminList');
+        list.innerHTML = '<div class="loading"><span class="loading-spinner"></span> Loading...</div>';
+        try {
+            const data = await fbGet('vikasKarya');
+            list.innerHTML = '';
+            if (!data) { list.innerHTML = '<div class="loading">Koi karya nahi. Upar se add karo!</div>'; return; }
+
+            const STATUS_LABELS = { done:'✅ Poora', ongoing:'🔄 Chal Raha', planned:'📋 Yojana' };
+            const STATUS_COLORS = { done:'#dcfce7', ongoing:'#fef3c7', planned:'#f1f5f9' };
+            const STATUS_TEXT   = { done:'#16a34a', ongoing:'#d97706', planned:'#64748b' };
+
+            let entries = Object.entries(data).reverse();
+            if (filter === 'chairman') entries = entries.filter(([,v]) => v.type === 'chairman');
+            if (filter === 'ward')     entries = entries.filter(([,v]) => v.type === 'ward');
+            if (filter === 'done')     entries = entries.filter(([,v]) => v.status === 'done');
+            if (filter === 'ongoing')  entries = entries.filter(([,v]) => v.status === 'ongoing');
+
+            if (!entries.length) { list.innerHTML = '<div class="loading">Is filter mein koi karya nahi.</div>'; return; }
+
+            entries.forEach(([key, v]) => {
+                const row = document.createElement('div');
+                row.style.cssText = 'padding:0.9rem 1rem;background:#f9f7f4;border-radius:10px;margin-bottom:0.6rem;border-left:4px solid var(--secondary);';
+                row.innerHTML = `
+                    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:0.5rem;flex-wrap:wrap;">
+                        <div style="flex:1;">
+                            <div style="font-weight:700;color:var(--primary);margin-bottom:0.2rem;">${v.emoji||'🔨'} ${v.title}</div>
+                            <div style="display:flex;gap:0.4rem;flex-wrap:wrap;margin-bottom:0.3rem;">
+                                <span style="background:${v.type==='chairman'?'#fce7f3':'#ede9fe'};color:${v.type==='chairman'?'#db2777':'#7c3aed'};font-size:0.68rem;font-weight:700;padding:2px 7px;border-radius:8px;">
+                                    ${v.type==='chairman'?'⭐ Chairman':'🏘️ Ward '+(v.ward||'')}
+                                </span>
+                                <span style="background:${STATUS_COLORS[v.status]||'#f1f5f9'};color:${STATUS_TEXT[v.status]||'#64748b'};font-size:0.68rem;font-weight:700;padding:2px 7px;border-radius:8px;">
+                                    ${STATUS_LABELS[v.status]||v.status}
+                                </span>
+                                ${v.year?`<span style="font-size:0.72rem;color:#999;">📅 ${v.year}</span>`:''}
+                            </div>
+                            ${v.desc?`<div style="font-size:0.82rem;color:#666;">${v.desc}</div>`:''}
+                            ${v.cost?`<div style="font-size:0.75rem;color:#aaa;margin-top:0.2rem;">💰 ${v.cost} ${v.beneficiary?'• 👥 '+v.beneficiary:''}</div>`:''}
+                        </div>
+                        <button class="btn btn-danger btn-sm ripple-host" onclick="deleteVikas('${key}')"><i class="fas fa-trash"></i></button>
+                    </div>`;
+                list.appendChild(row);
+            });
+        } catch(e) { list.innerHTML = `<div class="loading" style="color:var(--danger)">❌ ${e.message}</div>`; }
+    }
+
+    async function deleteVikas(key) {
+        if (!confirm('Ye vikas karya delete karna chahte ho?')) return;
+        try { await fbDelete('vikasKarya/'+key); loadVikasAdmin(vikasFilter); }
+        catch(e) { alert('Error: '+e.message); }
+    }
+
+    // ===== PANCHAYAT =====
+    const DEFAULT_WARDS = [
+        { number:1,  name:'', role:'Ward Sabhasad', confirmed:false },
+        { number:2,  name:'Shiv Shankar Bari', role:'Ward Sabhasad', confirmed:true },
+        { number:3,  name:'Amar Nath Soni', role:'Ward Sabhasad', confirmed:true },
+        { number:4,  name:'Fekan Chaudhary', role:'Ward Sabhasad', confirmed:true },
+        { number:5,  name:'', role:'Ward Sabhasad', confirmed:false },
+        { number:6,  name:'Sita Devi', role:'Ward Sabhasad', confirmed:true },
+        { number:7,  name:'', role:'Ward Sabhasad', confirmed:false },
+        { number:8,  name:'Md. Tarik Anwar', role:'Ward Sabhasad', confirmed:true },
+        { number:9,  name:'Rubi Bano', role:'Ward Sabhasad', confirmed:true },
+        { number:10, name:'', role:'Ward Sabhasad', confirmed:false },
+        { number:11, name:'', role:'Ward Sabhasad', confirmed:false },
+    ];
+
+    function buildWardEditor(wards) {
+        const ed = document.getElementById('wardEditor');
+        ed.innerHTML = '';
+        wards.forEach(w => {
+            const div = document.createElement('div');
+            div.style.cssText = 'display:grid;grid-template-columns:60px 1fr 1fr auto;gap:0.5rem;margin-bottom:0.6rem;align-items:center;';
+            div.innerHTML = `
+                <div style="background:linear-gradient(135deg,var(--primary),var(--secondary));color:white;border-radius:8px;padding:0.4rem;text-align:center;font-weight:700;font-size:0.82rem;">Ward ${w.number}</div>
+                <input type="text" id="w_name_${w.number}" value="${w.name||''}" placeholder="Panch ka naam"
+                    style="padding:0.5rem 0.7rem;border:2px solid #ddd;border-radius:8px;font-size:0.88rem;outline:none;">
+                <input type="text" id="w_role_${w.number}" value="${w.role||'Ward Panch'}" placeholder="Role"
+                    style="padding:0.5rem 0.7rem;border:2px solid #ddd;border-radius:8px;font-size:0.88rem;outline:none;">
+                <label style="display:flex;align-items:center;gap:0.3rem;font-size:0.8rem;cursor:pointer;white-space:nowrap;">
+                    <input type="checkbox" id="w_conf_${w.number}" ${w.confirmed?'checked':''} style="width:auto;"> Confirmed
+                </label>`;
+            ed.appendChild(div);
+        });
+    }
+
+    async function loadPanchayatAdmin() {
+        try {
+            const data = await fbGet('panchayat');
+            if (data) {
+                document.getElementById('pMukhiyaName').value   = data.mukhiyaName   || '';
+                document.getElementById('pMukhiyaDetail').value = data.mukhiyaDetail || '';
+                document.getElementById('pMukhiyaEmoji').value  = data.mukhiyaEmoji  || '👤';
+                buildWardEditor(data.wards && data.wards.length ? data.wards : DEFAULT_WARDS);
+            } else {
+                buildWardEditor(DEFAULT_WARDS);
+            }
+        } catch(e) { buildWardEditor(DEFAULT_WARDS); }
+    }
+
+    async function savePanchayat() {
+        const wards = DEFAULT_WARDS.map(w => ({
+            number:    w.number,
+            name:      document.getElementById(`w_name_${w.number}`)?.value.trim() || '',
+            role:      document.getElementById(`w_role_${w.number}`)?.value.trim() || 'Ward Panch',
+            confirmed: document.getElementById(`w_conf_${w.number}`)?.checked || false
+        }));
+        const payload = {
+            mukhiyaName:   document.getElementById('pMukhiyaName').value.trim(),
+            mukhiyaDetail: document.getElementById('pMukhiyaDetail').value.trim(),
+            mukhiyaEmoji:  document.getElementById('pMukhiyaEmoji').value.trim() || '👤',
+            wards,
+            updatedAt: new Date().toISOString()
+        };
+        try {
+            await fbPut('panchayat', payload);
+            showStatus('panchayatStatus', '✅ Panchayat data save ho gaya! Website pe reflect hoga.', 'success');
+        } catch(e) { showStatus('panchayatStatus', '❌ ' + e.message, 'error'); }
+    }
+
+    // ===== CALENDAR EVENTS =====
+    async function addCalEvent() {
+        const date = document.getElementById('evDate').value;
+        const name = document.getElementById('evName').value.trim();
+        if (!date || !name) { showStatus('calEventStatus','Date aur event name dono required hain.','error'); return; }
+        try {
+            const existing = await fbGet(`calEvents/${date}`).catch(() => null);
+            const arr = Array.isArray(existing) ? existing : (existing ? [existing] : []);
+            arr.push(name);
+            await fbPut(`calEvents/${date}`, arr);
+            document.getElementById('evDate').value = '';
+            document.getElementById('evName').value = '';
+            showStatus('calEventStatus','✅ Event added!','success');
+            loadCalEventsAdmin();
+        } catch(e) { showStatus('calEventStatus','❌ '+e.message,'error'); }
+    }
+
+    async function loadCalEventsAdmin() {
+        const list = document.getElementById('calEventAdminList');
+        list.innerHTML = '<div class="loading"><span class="loading-spinner"></span> Loading...</div>';
+        try {
+            const data = await fbGet('calEvents');
+            list.innerHTML = '';
+            if (!data || !Object.keys(data).length) {
+                list.innerHTML = '<div class="loading">No events yet.</div>'; return;
+            }
+            const sorted = Object.entries(data).sort(([a],[b]) => a.localeCompare(b));
+            sorted.forEach(([date, evts]) => {
+                const evtArr = Array.isArray(evts) ? evts : [evts];
+                const row = document.createElement('div');
+                row.style.cssText = 'padding:0.8rem;background:#f9f7f4;border-radius:10px;margin-bottom:0.6rem;border-left:4px solid #e74c3c;';
+                row.innerHTML = `
+                    <div style="font-weight:700;color:#c0392b;margin-bottom:0.3rem;">📅 ${date}</div>
+                    ${evtArr.map((e,i) => `
+                        <div style="display:flex;justify-content:space-between;align-items:center;padding:0.2rem 0;">
+                            <span style="font-size:0.9rem;">• ${e}</span>
+                            <button class="btn btn-danger btn-sm ripple-host" onclick="deleteCalEvent('${date}',${i})"><i class="fas fa-trash"></i></button>
+                        </div>`).join('')}`;
+                list.appendChild(row);
+            });
+        } catch(e) { list.innerHTML = `<div class="loading" style="color:var(--danger)">❌ ${e.message}</div>`; }
+    }
+
+    async function deleteCalEvent(date, idx) {
+        if (!confirm('Delete this event?')) return;
+        try {
+            const existing = await fbGet(`calEvents/${date}`);
+            const arr = Array.isArray(existing) ? existing : [existing];
+            arr.splice(idx, 1);
+            if (arr.length === 0) await fbDelete(`calEvents/${date}`);
+            else await fbPut(`calEvents/${date}`, arr);
+            loadCalEventsAdmin();
+        } catch(e) { alert('Error: '+e.message); }
+    }
+
+    // ===== FESTIVALS =====
+    const FEST_COLORS = { chhath:'fc-chhath', holi:'fc-holi', diwali:'fc-diwali', navratri:'fc-navratri', eid:'fc-eid', christmas:'fc-christmas', default:'fc-default' };
+    const FEST_GRAD   = { chhath:'linear-gradient(135deg,#e96c1a,#f7c948)', holi:'linear-gradient(135deg,#ff6b9d,#c44dff)', diwali:'linear-gradient(135deg,#f7971e,#ffd200)', navratri:'linear-gradient(135deg,#e040fb,#ff6e40)', eid:'linear-gradient(135deg,#1a8a5a,#56ccab)', christmas:'linear-gradient(135deg,#c0392b,#27ae60)', default:'linear-gradient(135deg,#2d5016,#6b8e23)' };
+
+    async function addFestival() {
+        const name = document.getElementById('fName').value.trim();
+        const desc = document.getElementById('fDesc').value.trim();
+        if (!name) { showStatus('festivalStatus','Festival name required!','error'); return; }
+        try {
+            await fbPost('festivals', {
+                name,
+                emoji:   document.getElementById('fEmoji').value.trim() || '🎊',
+                date:    document.getElementById('fDate').value.trim(),
+                desc,
+                color:   document.getElementById('fColor').value,
+                popular: document.getElementById('fPopular').checked,
+                createdAt: new Date().toISOString()
+            });
+            ['fName','fEmoji','fDate','fDesc'].forEach(id => document.getElementById(id).value = '');
+            document.getElementById('fPopular').checked = false;
+            showStatus('festivalStatus','✅ Festival card added!','success');
+            loadFestivalsAdmin();
+        } catch(e) { showStatus('festivalStatus','❌ '+e.message,'error'); }
+    }
+
+    async function loadFestivalsAdmin() {
+        const list = document.getElementById('festivalList');
+        list.innerHTML = '<div class="loading"><span class="loading-spinner"></span> Loading...</div>';
+        try {
+            const data = await fbGet('festivals');
+            list.innerHTML = '';
+            if (!data) { list.innerHTML = '<div class="loading">No festivals yet. Add one above!</div>'; return; }
+            Object.entries(data).forEach(([key, f]) => {
+                const grad = FEST_GRAD[f.color] || FEST_GRAD.default;
+                const row = document.createElement('div');
+                row.style.cssText = 'display:flex;align-items:center;gap:1rem;padding:0.8rem;border-radius:10px;margin-bottom:0.6rem;background:#f9f7f4;';
+                row.innerHTML = `
+                    <div style="width:50px;height:50px;border-radius:10px;background:${grad};display:flex;align-items:center;justify-content:center;font-size:1.6rem;flex-shrink:0;">${f.emoji||'🎊'}</div>
+                    <div style="flex:1;">
+                        <div style="font-weight:700;color:var(--primary);">${f.name} ${f.popular?'<span style="background:gold;color:#333;font-size:0.7rem;padding:1px 6px;border-radius:8px;margin-left:4px;">POPULAR</span>':''}</div>
+                        <div style="font-size:0.8rem;color:#999;">${f.date||''}</div>
+                        <div style="font-size:0.85rem;color:#666;margin-top:2px;">${f.desc||''}</div>
+                    </div>
+                    <button class="btn btn-danger btn-sm ripple-host" onclick="deleteFestival('${key}')"><i class="fas fa-trash"></i></button>`;
+                list.appendChild(row);
+            });
+        } catch(e) { list.innerHTML = `<div class="loading" style="color:var(--danger)">❌ ${e.message}</div>`; }
+    }
+
+    async function deleteFestival(key) {
+        if (!confirm('Delete this festival card?')) return;
+        try { await fbDelete('festivals/' + key); loadFestivalsAdmin(); }
+        catch(e) { alert('Error: '+e.message); }
+    }
+
+    // ===== TYPING LINES EDITOR =====
+    let tlCount = 0;
+    const DEFAULT_TYPING_LINES = [
+        "Garhani is a historic and culturally rich village 🌿",
+        "Located in the Bhojpur district of Bihar, India 📍",
+        "Known for its fertile farmlands and deep-rooted traditions 🌾",
+        "A warm community spirit lives in every home here 🏡",
+        "Representing the true heart of rural Bihar ❤️"
+    ];
+
+    function addTypingLine(text='') {
+        tlCount++;
+        const i = tlCount;
+        const ed = document.getElementById('typingLinesEditor');
+        const div = document.createElement('div');
+        div.id = `tl_${i}`;
+        div.style.cssText = 'display:flex;gap:0.5rem;margin-bottom:0.5rem;align-items:center;';
+        div.innerHTML = `
+            <input type="text" id="tl_val_${i}" value="${text.replace(/"/g,'&quot;')}" placeholder="e.g. Garhani is a beautiful village 🌿"
+                style="flex:1;padding:0.55rem 0.8rem;border:2px solid #ddd;border-radius:8px;font-size:0.9rem;outline:none;">
+            <button onclick="document.getElementById('tl_${i}').remove()"
+                style="background:var(--danger);color:white;border:none;border-radius:50%;width:28px;height:28px;cursor:pointer;font-size:1rem;flex-shrink:0;">✕</button>`;
+        ed.appendChild(div);
+    }
+
+    function getTypingLines() {
+        const lines = [];
+        document.querySelectorAll('[id^="tl_"]').forEach(div => {
+            if (!div.id.match(/^tl_\d+$/)) return;
+            const i = div.id.replace('tl_','');
+            const v = document.getElementById(`tl_val_${i}`)?.value.trim();
+            if (v) lines.push(v);
+        });
+        return lines;
+    }
+
+    // ===== STATS EDITOR =====
+    let statRowCount = 0;
+    function addStatRow(emoji='', value='', suffix='', label='') {
+        statRowCount++;
+        const i = statRowCount;
+        const ed = document.getElementById('statsEditor');
+        const div = document.createElement('div');
+        div.id = `sr_${i}`;
+        div.style.cssText = 'display:grid;grid-template-columns:60px 1fr 80px 1fr auto;gap:0.5rem;margin-bottom:0.6rem;align-items:center;';
+        div.innerHTML = `
+            <input type="text" id="sr_emoji_${i}" value="${emoji}" placeholder="🌾" style="text-align:center;padding:0.5rem;border:2px solid #ddd;border-radius:8px;font-size:1.2rem;">
+            <input type="text" id="sr_label_${i}" value="${label}" placeholder="Label (e.g. Population)" style="padding:0.5rem;border:2px solid #ddd;border-radius:8px;font-size:0.9rem;">
+            <input type="number" id="sr_value_${i}" value="${value}" placeholder="8500" style="padding:0.5rem;border:2px solid #ddd;border-radius:8px;font-size:0.9rem;">
+            <input type="text" id="sr_suffix_${i}" value="${suffix}" placeholder="Suffix (e.g. +, %, km²)" style="padding:0.5rem;border:2px solid #ddd;border-radius:8px;font-size:0.9rem;">
+            <button onclick="document.getElementById('sr_${i}').remove()" style="background:var(--danger);color:white;border:none;border-radius:50%;width:28px;height:28px;cursor:pointer;font-size:1rem;">✕</button>`;
+        ed.appendChild(div);
+    }
+
+    function getStatsFromEditor() {
+        const stats = [];
+        document.querySelectorAll('[id^="sr_"]').forEach(div => {
+            if (!div.id.match(/^sr_\d+$/)) return;
+            const i = div.id.replace('sr_','');
+            const emoji  = document.getElementById(`sr_emoji_${i}`)?.value.trim();
+            const label  = document.getElementById(`sr_label_${i}`)?.value.trim();
+            const value  = parseInt(document.getElementById(`sr_value_${i}`)?.value) || 0;
+            const suffix = document.getElementById(`sr_suffix_${i}`)?.value.trim();
+            if (label) stats.push({ emoji:emoji||'📊', label, value, suffix:suffix||'' });
+        });
+        return stats;
+    }
+
+    async function saveSiteContent() {
+        // Collect notice cards
+        const cards = [];
+        document.querySelectorAll('.notice-card-editor').forEach(div => {
+            const id = div.id.replace('nc_','');
+            const t = document.getElementById(`nc_title_${id}`)?.value.trim();
+            const x = document.getElementById(`nc_text_${id}`)?.value.trim();
+            if (t || x) cards.push({ title:t||'', text:x||'' });
+        });
+
+        const payload = {
+            tickerText:      document.getElementById('cTickerTop').value.trim(),
+            bottomTicker:    document.getElementById('cTickerBottom').value.trim(),
+            siteTitle:       document.getElementById('cSiteTitle').value.trim(),
+            siteSubtitle:    document.getElementById('cSiteSubtitle').value.trim(),
+            siteLocation:    document.getElementById('cSiteLocation').value.trim(),
+            heroTitle:       document.getElementById('cHeroTitle').value.trim(),
+            typingLines:     getTypingLines(),
+            footerFb:        document.getElementById('cFooterFb').value.trim(),
+            footerIg:        document.getElementById('cFooterIg').value.trim(),
+            footerYt:        document.getElementById('cFooterYt').value.trim(),
+            footerCopyright: document.getElementById('cFooterCopy').value.trim(),
+            noticeCards:     cards,
+            stats:           getStatsFromEditor(),
+            updatedAt:       new Date().toISOString()
+        };
+
+        try {
+            await fbPut('siteContent', payload);
+            showStatus('contentStatus','✅ Site content saved successfully! Changes will reflect on website.','success');
+        } catch(e) {
+            showStatus('contentStatus','❌ Save failed: '+e.message,'error');
+        }
+    }
+
+    // ===== LIGHTBOX =====
+    function viewMedia(url, type) {
+        const lb  = document.getElementById('lightbox');
+        const img = document.getElementById('lightboxImg');
+        const vid = document.getElementById('lightboxVid');
+        // Remove old iframe if any
+        const oldIframe = lb.querySelector('iframe');
+        if (oldIframe) oldIframe.remove();
+        img.style.display = 'none'; vid.style.display = 'none';
+        if (type === 'img') {
+            img.src = url; img.style.display = 'block';
+        } else if (type === 'yt') {
+            const iframe = document.createElement('iframe');
+            iframe.src = url + '?autoplay=1';
+            iframe.style.cssText = 'width:90vw;max-width:800px;height:50vw;max-height:450px;border:none;border-radius:10px;';
+            iframe.allow = 'autoplay; fullscreen';
+            lb.querySelector('.lightbox-close').after(iframe);
+        } else {
+            vid.src = url; vid.style.display = 'block';
+        }
+        lb.classList.add('active');
+    }
+    function closeLightbox() {
+        document.getElementById('lightbox').classList.remove('active');
+        document.getElementById('lightboxVid').pause?.();
+    }
+
+    // ===== DB STATUS =====
+    async function checkDbStatus() {
+        const el = document.getElementById('dbStatus');
+        try {
+            await fbGet('_ping');
+            el.textContent = '✅ Firebase Connected — garhani-b65bd';
+            el.className = 'db-status ok';
+        } catch(e) {
+            el.textContent = '❌ Connection failed — ' + e.message;
+            el.className = 'db-status err';
+        }
+    }
+
+    // ===== BACKUP =====
+    async function backupData() {
+        showStatus('backupStatus','Downloading...','info');
+        try {
+            const data = await fbGet('');
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type:'application/json' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = `garhani_backup_${new Date().toISOString().slice(0,10)}.json`;
+            a.click();
+            showStatus('backupStatus','✅ Backup downloaded!','success');
+        } catch(e) { showStatus('backupStatus','❌ '+e.message,'error'); }
+    }
+
+    // ===== DELETE ALL =====
+    async function deleteAllPhotos() {
+        if (!confirm('Delete ALL photos? This cannot be undone!')) return;
+        try { await fbDelete('gallery/photos'); loadPhotos(); alert('All photos deleted.'); }
+        catch(e) { alert('Error: '+e.message); }
+    }
+    async function deleteAllVideos() {
+        if (!confirm('Delete ALL videos? This cannot be undone!')) return;
+        try { await fbDelete('gallery/videos'); loadVideos(); alert('All videos deleted.'); }
+        catch(e) { alert('Error: '+e.message); }
+    }
+    async function deleteAllAnnouncements() {
+        if (!confirm('Delete ALL announcements?')) return;
+        try { await fbDelete('announcements'); loadAnnouncements(); alert('All announcements deleted.'); }
+        catch(e) { alert('Error: '+e.message); }
+    }
+</script>
+
+</body>
+</html>
